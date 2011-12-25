@@ -1,4 +1,4 @@
-require 'livelist-rails/rails/active_record'
+require 'livelist/rails/active_record'
 
 module Livelist
   module Rails
