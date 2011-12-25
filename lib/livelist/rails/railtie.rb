@@ -5,6 +5,10 @@ module Livelist
 
    class Railtie < ::Rails::Railtie
       initializer "livelist-rails" do |app|
+        puts '*'*100
+        puts '*'*100
+        puts '*'*100
+        puts '*'*100
         ActiveSupport.on_load :active_record do
           ::ActiveRecord::Base.send :extend, ActiveRecord
         end
