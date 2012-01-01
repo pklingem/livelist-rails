@@ -48,7 +48,8 @@ then:
     end
 
 ### JSON template setup
-#### app/views/users/index.json.rabl
+#### RABL
+##### app/views/users/index.json.rabl
 
     object false
     node :pagination do
@@ -61,11 +62,17 @@ then:
       extends('users/user')
     end
 
-#### app/views/users/user.json.rabl
+##### app/views/users/user.json.rabl
 
     object @user
     attributes :first_name, :last_name, :status
 
 ### model setup
 
-    filters :status
+    class User < ActiveRecord::Base
+      filters :status
+    end
+
+## Todos
+
+# add gem dependencies
