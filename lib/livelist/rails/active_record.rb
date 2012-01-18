@@ -18,7 +18,6 @@ module Livelist
               filter_slug
             end
 
-
             define_method "#{filter_slug}_filter" do |options|
               {
                 :filter_slug => send("#{filter_slug}_filter_slug"),

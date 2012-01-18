@@ -5,7 +5,7 @@
 
 ### in your Gemfile:
 
-    gem 'livelist', '0.0.2'
+    gem 'livelist-rails', '0.0.3'
 
 then:
 
@@ -30,14 +30,28 @@ then:
           renderTo: 'div#pagination'
       )
 
-#### app/assets/javascripts/application.js (manifest file)
+#### Rails 3.1 - Asset Pipeline
+##### app/assets/javascripts/application.js (manifest file)
 
     //= require livelist-rails
     //= require users
 
-#### app/views/layouts/application.html.erb
+##### app/views/layouts/application.html.erb
 
     <%= javascript_include_tag 'application' %>
+
+#### Rails 3.0
+##### app/views/layouts/application.html.erb
+
+if you are not already including mustache.js and underscore.min.js in
+your application layout, add the following:
+
+    <%= javascript_include_tag :livelist_dependencies %>
+
+to include livelist.js or livelist.min.js (depending on your
+environment) add the following:
+
+    <%= javascript_include_tag :livelist %>
 
 ### controller setup
 #### app/controllers/users_controller.rb
@@ -76,3 +90,4 @@ then:
 ## Todos
 
 # add gem dependencies
+# add generator for Rails 3.0
