@@ -7,6 +7,7 @@ module Livelist
       def filters(*filter_slugs)
         @@filter_slugs = filter_slugs
         @@filter_slugs.each do |filter_slug|
+          filter_slug = filter_slug.to_s
           metaclass = class << self; self; end
 
           metaclass.instance_eval do
@@ -27,19 +28,19 @@ module Livelist
             end
 
             define_method "#{filter_slug}_filter_options" do
-              select("distinct #{filter_slug}").map(&filter_slug)
+              select("distinct #{filter_slug}").map(&filter_slug.to_sym)
             end
 
             define_method "#{filter_slug}_filter_counts" do
               group(filter_slug).count
             end
 
-            define_method "#{filter_slug}_filter_option" do |state, selected|
+            define_method "#{filter_slug}_filter_option" do |option, selected|
               {
-                :slug => state,
-                :name => state.capitalize,
-                :value => state,
-                :count => @counts[state],
+                :slug => option.to_s,
+                :name => option.to_s.capitalize,
+                :value => option.to_s,
+                :count => @counts[option],
                 :selected => selected
               }
             end
@@ -53,7 +54,7 @@ module Livelist
             end
 
             define_method "#{filter_slug}_relation" do |values|
-              where(filter_slug => values)
+              where(model_name.to_s.tableize => { filter_slug => values })
             end
           end
         end
@@ -61,7 +62,8 @@ module Livelist
         def self.filters_as_json(filter_params)
           filter_params ||= {}
           @@filter_slugs.map do |filter|
-            send("#{filter}_filter", send("#{filter}_filters", filter_params[filter]))
+            filter_options = send("#{filter}_filters", filter_params[filter])
+            send("#{filter}_filter", filter_options)
           end
         end
 
