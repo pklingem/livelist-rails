@@ -27,7 +27,7 @@ module Livelist
               }
             end
 
-            define_method "#{filter_slug}_filter_options" do
+            define_method "#{filter_slug}_filter_values" do
               select("distinct #{filter_slug}").map(&filter_slug.to_sym)
             end
 
@@ -35,20 +35,42 @@ module Livelist
               group(filter_slug).count
             end
 
+            define_method "#{filter_slug}_filter_option_slug" do |option|
+              option.to_s
+            end
+
+            define_method "#{filter_slug}_filter_option_name" do |option|
+              option.to_s.capitalize
+            end
+
+            define_method "#{filter_slug}_filter_option_value" do |option|
+              option.to_s
+            end
+
+            define_method "#{filter_slug}_filter_option_count" do |option|
+              unless class_variables.include?("@@#{filter_slug}_filter_counts")
+                class_variable_set(:"@@#{filter_slug}_filter_counts", send("#{filter_slug}_filter_counts"))
+              end
+              class_variable_get(:"@@#{filter_slug}_filter_counts")[option]
+            end
+
             define_method "#{filter_slug}_filter_option" do |option, selected|
               {
-                :slug => option.to_s,
-                :name => option.to_s.capitalize,
-                :value => option.to_s,
-                :count => @counts[option],
+                :slug => send("#{filter_slug}_filter_option_slug", option),
+                :name => send("#{filter_slug}_filter_option_name", option),
+                :value => send("#{filter_slug}_filter_option_value", option),
+                :count => send("#{filter_slug}_filter_option_count", option),
                 :selected => selected
               }
             end
 
+            define_method "#{filter_slug}_filter_option_selected?" do |filter_params, option|
+              filter_params.nil? ? true : filter_params.include?(option)
+            end
+
             define_method "#{filter_slug}_filters" do |filter_params|
-              @counts = send("#{filter_slug}_filter_counts")
-              send("#{filter_slug}_filter_options").map do |option|
-                selected = filter_params.nil? ? true : filter_params.include?(option)
+              send("#{filter_slug}_filter_values").map do |option|
+                selected = send("#{filter_slug}_filter_option_selected?", filter_params, option)
                 send("#{filter_slug}_filter_option", option, selected)
               end
             end
