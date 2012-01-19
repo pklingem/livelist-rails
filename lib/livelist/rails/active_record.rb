@@ -56,10 +56,10 @@ module Livelist
 
             define_method "#{filter_slug}_filter_option" do |option, selected|
               {
-                :slug => send("#{filter_slug}_filter_option_slug", option),
-                :name => send("#{filter_slug}_filter_option_name", option),
-                :value => send("#{filter_slug}_filter_option_value", option),
-                :count => send("#{filter_slug}_filter_option_count", option),
+                :slug => [String, Integer].any?{|klass| option.kind_of?(klass)} ? option : send("#{filter_slug}_filter_option_slug", option),
+                :name => [String, Integer].any?{|klass| option.kind_of?(klass)} ? option : send("#{filter_slug}_filter_option_name", option),
+                :value => [String, Integer].any?{|klass| option.kind_of?(klass)} ? option : send("#{filter_slug}_filter_option_value", option),
+                :count => [String, Integer].any?{|klass| option.kind_of?(klass)} ? option : send("#{filter_slug}_filter_option_count", option),
                 :selected => selected
               }
             end
