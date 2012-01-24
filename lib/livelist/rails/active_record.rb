@@ -51,7 +51,7 @@ module Livelist
               unless class_variables.include?("@@#{filter_slug}_filter_counts")
                 class_variable_set(:"@@#{filter_slug}_filter_counts", send("#{filter_slug}_filter_counts"))
               end
-              class_variable_get(:"@@#{filter_slug}_filter_counts")[option.to_s]
+              class_variable_get(:"@@#{filter_slug}_filter_counts")[option.to_s] || 0
             end
 
             define_method "#{filter_slug}_filter_option" do |option, selected|
@@ -71,7 +71,7 @@ module Livelist
             end
 
             define_method "#{filter_slug}_filter_option_selected?" do |filter_params, option|
-              filter_params.nil? ? true : filter_params.include?(option)
+              filter_params.nil? ? true : filter_params.include?(option.to_s)
             end
 
             define_method "#{filter_slug}_filters" do |filter_params|

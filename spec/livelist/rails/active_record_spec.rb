@@ -108,9 +108,20 @@ describe Livelist::Rails::ActiveRecord do
 		it { subject.should respond_to(:state_filter_option_count) }
 		it { subject.should respond_to(:status_filter_option_count) }
 
+    it 'option argument should be converted to a string' do
+      state_filter_counts['1'] = 3
+      subject.should_receive(:state_filter_counts).and_return(state_filter_counts)
+      subject.state_filter_option_count(1).should == 3
+    end
+
     it 'should be the proper count for the option' do
       subject.should_receive(:state_filter_counts).and_return(state_filter_counts)
       subject.state_filter_option_count(option).should == 1
+    end
+
+    it 'should be 0 if the value for the option is nil' do
+      subject.should_receive(:state_filter_counts).and_return(state_filter_counts)
+      subject.state_filter_option_count('West Virginia').should == 0
     end
 
     it 'should cache the counts when the method is first called' do
