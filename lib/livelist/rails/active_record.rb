@@ -27,8 +27,18 @@ module Livelist
               }
             end
 
+            define_method "#{filter_slug}_filter_option_key_name" do
+              :id
+            end
+
             define_method "#{filter_slug}_filter_values" do
-              select("distinct #{filter_slug}").map(&filter_slug.to_sym)
+              key = send("#{filter_slug}_filter_option_key_name")
+              option_objects = send("#{filter_slug}_filter_option_objects")
+              if option_objects.any?{|object| object.kind_of?(Hash) && object.has_key?(key)}
+                option_objects.map{|object| object[key]}
+              elsif option_objects.any?{|object| object.respond_to?(key)}
+                option_objects.map(&key)
+              end
             end
 
             define_method "#{filter_slug}_filter_counts" do
@@ -36,29 +46,32 @@ module Livelist
             end
 
             define_method "#{filter_slug}_filter_option_slug" do |option|
-              option.to_s
+              if [String, Integer].any?{|klass| option.kind_of?(klass)}
+                option.to_s
+              else
+                option.send(:id).to_s
+              end
             end
-
-  #def self.sponsor_filter_option_name(option)
-    #@sponsors ||= sponsor_filter_option_names
-    #sponsor = @sponsors.detect{|sponsor| sponsor.send(sponsor_filter_value_method_name) == option}
-    #sponsor.send(sponsor_filter_label_method_name)
-  #end
 
             define_method "#{filter_slug}_filter_option_name" do |option|
-              unless class_variables.include?("@@#{filter_slug}_filter_option_names")
-                class_variable_set(:"@@#{filter_slug}_filter_option_names", send("#{filter_slug}_filter_option_names"))
+              option_objects = send("#{filter_slug}_filter_option_objects")
+              if option_objects.any?{|object| object.kind_of?(Hash) && object.has_key?(:name)}
+                option_object = option_objects.detect{|object| object[:state] == option.to_s}
+                option_object[:name]
+              elsif option_objects.any?{|object| object.respond_to?(:name)}
+                option_object = option_objects.detect{|object| object.send(:id).to_s == option.to_s}
+                option_object.send(:name)
+              else
+                option.to_s
               end
-              option_names_option = class_variable_get(:"@@#{filter_slug}_filter_option_names").detect{|opt| opt.send(send("#{filter_slug}_filter_value_method_name")) == option}
-              option_names_option.send(send("#{filter_slug}_filter_label_method_name"))
             end
 
-            #define_method "#{filter_slug}_filter_option_name" do |option|
-              #option.to_s.capitalize
-            #end
-
             define_method "#{filter_slug}_filter_option_value" do |option|
-              option.to_s
+              if [String, Integer].any?{|klass| option.kind_of?(klass)}
+                option.to_s
+              else
+                option.send(:id).to_s
+              end
             end
 
             define_method "#{filter_slug}_filter_option_count" do |option|
@@ -69,7 +82,6 @@ module Livelist
             end
 
             define_method "#{filter_slug}_filter_option" do |option, selected|
-              #[String, Integer].any?{|klass| option.kind_of?(klass)}
               option_slug  = send("#{filter_slug}_filter_option_slug", option)
               option_name  = send("#{filter_slug}_filter_option_name", option)
               option_value = send("#{filter_slug}_filter_option_value", option)
