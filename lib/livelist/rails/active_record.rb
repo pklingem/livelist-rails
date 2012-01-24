@@ -39,9 +39,23 @@ module Livelist
               option.to_s
             end
 
+  #def self.sponsor_filter_option_name(option)
+    #@sponsors ||= sponsor_filter_option_names
+    #sponsor = @sponsors.detect{|sponsor| sponsor.send(sponsor_filter_value_method_name) == option}
+    #sponsor.send(sponsor_filter_label_method_name)
+  #end
+
             define_method "#{filter_slug}_filter_option_name" do |option|
-              option.to_s.capitalize
+              unless class_variables.include?("@@#{filter_slug}_filter_option_names")
+                class_variable_set(:"@@#{filter_slug}_filter_option_names", send("#{filter_slug}_filter_option_names"))
+              end
+              option_names_option = class_variable_get(:"@@#{filter_slug}_filter_option_names").detect{|opt| opt.send(send("#{filter_slug}_filter_value_method_name")) == option}
+              option_names_option.send(send("#{filter_slug}_filter_label_method_name"))
             end
+
+            #define_method "#{filter_slug}_filter_option_name" do |option|
+              #option.to_s.capitalize
+            #end
 
             define_method "#{filter_slug}_filter_option_value" do |option|
               option.to_s
