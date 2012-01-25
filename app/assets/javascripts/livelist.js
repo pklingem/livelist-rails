@@ -51,7 +51,8 @@
     __extends(List, _super);
 
     function List(search, filters, pagination, globalOptions, options) {
-      var _this = this;
+      var cookie, presets,
+        _this = this;
       if (options == null) options = {};
       this.renderIndex = __bind(this.renderIndex, this);
       this.removeFetchingIndication = __bind(this.removeFetchingIndication, this);
@@ -68,12 +69,20 @@
       this.setOptions(options);
       $(this.renderTo).bind(this.eventName, function(event, params) {
         return _this.fetch({
-          filterPresets: null,
+          presets: null,
           page: params != null ? params.page : void 0
         });
       });
+      if (jQuery.cookie && this.filters.useCookies) {
+        cookie = jQuery.cookie(this.filters.cookieName);
+      }
+      if (this.filters.useCookies && cookie) {
+        presets = JSON.parse(cookie);
+      } else {
+        presets = this.filters.presets;
+      }
       this.fetch({
-        filterPresets: this.filters.presets
+        presets: presets
       });
     }
 
@@ -93,20 +102,30 @@
       return this.filters.render(this.data);
     };
 
-    List.prototype.fetch = function(options) {
-      var params, searchTerm, _ref,
+    List.prototype.selections = function() {
+      var filters,
         _this = this;
+      filters = {};
+      _.each(this.filters.filters, function(filter) {
+        return filters[filter] = _this.filters.filterSelections(filter);
+      });
+      return filters;
+    };
+
+    List.prototype.fetch = function(options) {
+      var params, searchTerm;
       if (this.fetchRequest) this.fetchRequest.abort();
       searchTerm = this.search.searchTerm();
       params = {
         filters: {}
       };
-      if (((_ref = options.filterPresets) != null ? _ref.length : void 0) > 0) {
-        params.filters = options.filterPresets;
+      if (jQuery.isEmptyObject(options.presets)) {
+        params.filters = this.selections();
+        if (jQuery.cookie && !jQuery.isEmptyObject(params.filters)) {
+          jQuery.cookie(this.filters.cookieName, JSON.stringify(params.filters));
+        }
       } else {
-        _.each(this.filters.filters, function(filter) {
-          return params.filters[filter] = _this.filters.filterSelections(filter);
-        });
+        params.filters = options.presets;
       }
       if (searchTerm) params.q = searchTerm;
       if (options.page) params.page = options.page;
@@ -132,6 +151,8 @@
 
   })(Utilities);
 
+  window.LiveList.version = '0.0.3';
+
   window.Filters = (function(_super) {
 
     __extends(Filters, _super);
@@ -142,6 +163,9 @@
       this.handleAdvancedOptionsClick = __bind(this.handleAdvancedOptionsClick, this);
       this.setOptions(globalOptions);
       this.filters = options.presets ? _.keys(options.presets) : [];
+      if (!this.filters.cookieName) {
+        this.filters.cookieName = 'livelist_filter_presets';
+      }
       this.setOptions(options);
       $('input.filter_option', this.renderTo).live('change', function() {
         return $(_this.listSelector).trigger(_this.eventName);
@@ -159,8 +183,19 @@
       return _.pluck($("#" + filter + "_filter_options input.filter_option:checked"), 'value');
     };
 
+    Filters.prototype.noFiltersSelected = function(data) {
+      return _.all(data.filters, function(filter) {
+        return _.all(filter.options, function(option) {
+          return !option.selected;
+        });
+      });
+    };
+
     Filters.prototype.render = function(data) {
-      return $(this.renderTo).html(Mustache.to_html(this.filtersTemplate, data));
+      $(this.renderTo).html(Mustache.to_html(this.filtersTemplate, data));
+      if (this.noFiltersSelected(data) && data[this.resourceName].length > 0) {
+        return $('input[type="checkbox"]', this.renderTo).attr('checked', 'checked');
+      }
     };
 
     Filters.prototype.handleAdvancedOptionsClick = function(event) {

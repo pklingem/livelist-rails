@@ -34,8 +34,14 @@ class window.List extends Utilities
     @fetchingIndicationClass = 'updating'
     @setOptions(options)
 
-    $(@renderTo).bind(@eventName, (event, params) => @fetch(filterPresets: null, page: params?.page))
-    @fetch(filterPresets: @filters.presets)
+    $(@renderTo).bind(@eventName, (event, params) => @fetch(presets: null, page: params?.page))
+
+    cookie = jQuery.cookie(@filters.cookieName) if jQuery.cookie && @filters.useCookies
+    if @filters.useCookies && cookie
+      presets = JSON.parse(cookie)
+    else
+      presets = @filters.presets
+    @fetch(presets: presets)
 
   displayFetchingIndication: => $(@renderTo).addClass(@fetchingIndicationClass)
   removeFetchingIndication:  => $(@renderTo).removeClass(@fetchingIndicationClass)
@@ -47,14 +53,23 @@ class window.List extends Utilities
     @filters.filters = _.pluck( @data.filters, 'filter_slug' )
     @filters.render(@data)
 
+  selections: ->
+    filters = {}
+    _.each( @filters.filters, (filter) => filters[filter] = @filters.filterSelections( filter ) )
+    filters
+
   fetch: (options) ->
     @fetchRequest.abort() if @fetchRequest
     searchTerm = @search.searchTerm()
     params = { filters: {} }
-    if options.filterPresets?.length > 0
-      params.filters = options.filterPresets
+
+    if jQuery.isEmptyObject(options.presets)
+      params.filters = @selections()
+      if jQuery.cookie && not jQuery.isEmptyObject(params.filters)
+        jQuery.cookie(@filters.cookieName, JSON.stringify(params.filters))
     else
-      _.each( @filters.filters, (filter) => params.filters[filter] = @filters.filterSelections( filter ) )
+      params.filters = options.presets
+
     if searchTerm then params.q = searchTerm
     if options.page then params.page = options.page
     @fetchRequest = $.ajax(
@@ -72,10 +87,13 @@ class window.List extends Utilities
     $(@renderTo).html( Mustache.to_html(@listTemplate, @data, partials) )
     @removeFetchingIndication()
 
+window.LiveList.version = '0.0.3'
+
 class window.Filters extends Utilities
   constructor: (globalOptions, options = {}) ->
     @setOptions(globalOptions)
     @filters = if options.presets then _.keys(options.presets) else []
+    unless @filters.cookieName then @filters.cookieName = 'livelist_filter_presets'
     @setOptions(options)
     $('input.filter_option', @renderTo).live( 'change', => $(@listSelector).trigger(@eventName) )
     $(@advancedOptionsToggleSelector).click(@handleAdvancedOptionsClick)
@@ -110,7 +128,18 @@ class window.Filters extends Utilities
   filterValues:     (filter) -> _.pluck( $(".#{filter}_filter_input"), 'value' )
   filterSelections: (filter) -> _.pluck( $("##{filter}_filter_options input.filter_option:checked"), 'value' )
 
-  render: (data) -> $(@renderTo).html( Mustache.to_html(@filtersTemplate, data) )
+  noFiltersSelected: (data) ->
+    _.all( data.filters, (filter) ->
+      _.all( filter.options, (option) ->
+        not option.selected
+      )
+    )
+
+  render: (data) ->
+    $(@renderTo).html( Mustache.to_html(@filtersTemplate, data) )
+    if @noFiltersSelected(data) && data[@resourceName].length > 0
+      $('input[type="checkbox"]', @renderTo).attr('checked', 'checked')
+
 
   handleAdvancedOptionsClick: (event) =>
     event.preventDefault()

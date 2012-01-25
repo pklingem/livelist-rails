@@ -12,9 +12,8 @@ module Livelist
 
       if ::Rails.version < "3.1.0"
         config.before_configuration do
-          if ::Rails.root.join("public/javascripts/livelist.min.js").exist? ||
-             %W(production staging).include?(::Rails.env)
-            livelist_filename = 'livelist-min'
+          if %W(production staging).include?(::Rails.env)
+            livelist_filename = 'livelist.min'
           else
             livelist_filename = 'livelist'
           end

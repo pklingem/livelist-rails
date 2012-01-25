@@ -28,7 +28,11 @@ module Livelist
             end
 
             define_method "#{filter_slug}_filter_option_key_name" do
-              :id
+              new.respond_to?(filter_slug.to_sym) ? filter_slug.to_sym : :id
+            end
+
+            define_method "#{filter_slug}_filter_option_objects" do
+              select("distinct #{filter_slug}").all
             end
 
             define_method "#{filter_slug}_filter_values" do
@@ -97,7 +101,7 @@ module Livelist
             end
 
             define_method "#{filter_slug}_filter_option_selected?" do |filter_params, option|
-              filter_params.nil? ? true : filter_params.include?(option.to_s)
+              filter_params.nil? ? false : filter_params.include?(option.to_s)
             end
 
             define_method "#{filter_slug}_filters" do |filter_params|
