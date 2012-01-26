@@ -3,15 +3,16 @@ require 'active_record'
 module Livelist
   module Rails
     module ActiveRecord
+      @@filter_slugs = []
+      @@filter_collections = {}
 
-      def filters(*filter_slugs)
-        @@filter_slugs = filter_slugs
+      def filter_for(filter_slug, options = {})
         @@counts = {}
-        @@option_objects = {}
 
-        @@filter_slugs.each do |filter_slug|
-          define_class_methods(filter_slug)
-        end
+        @@filter_slugs << filter_slug unless @@filter_slugs.include?(filter_slug)
+        @@filter_collections[filter_slug] = options[:collection] || select("distinct #{filter_slug}").all
+
+        define_class_methods(filter_slug)
 
         def filters_as_json(filter_params)
           @@filter_params = filter_params || {}
@@ -37,11 +38,6 @@ module Livelist
         def filter_option_count(filter_slug, option)
           @@counts[filter_slug] = send("#{filter_slug}_filter_counts") unless @@counts.has_key?(filter_slug)
           @@counts[filter_slug][option.to_s] || 0
-        end
-
-        def cached_option_objects(filter_slug)
-          @@option_objects[filter_slug] = send("#{filter_slug}_filter_option_objects") unless @@option_objects.has_key?(filter_slug)
-          @@option_objects[filter_slug]
         end
       end
 
@@ -70,17 +66,13 @@ module Livelist
             new.respond_to?(filter_slug.to_sym) ? filter_slug.to_sym : :id
           end
 
-          define_method "#{filter_slug}_filter_option_objects" do
-            select("distinct #{filter_slug}").all
-          end
-
           define_method "#{filter_slug}_filter_values" do
             key = send("#{filter_slug}_filter_option_key_name")
-            option_objects = cached_option_objects(filter_slug)
-            if option_objects.any?{|object| object.kind_of?(Hash) && object.has_key?(key)}
-              option_objects.map{|object| object[key]}
-            elsif option_objects.any?{|object| object.respond_to?(key)}
-              option_objects.map(&key)
+            filter_collection = @@filter_collections[filter_slug.to_sym]
+            if filter_collection.any?{|object| object.kind_of?(Hash) && object.has_key?(key)}
+              filter_collection.map{|object| object[key]}
+            elsif filter_collection.any?{|object| object.respond_to?(key)}
+              filter_collection.map(&key)
             end
           end
 
@@ -97,12 +89,12 @@ module Livelist
           end
 
           define_method "#{filter_slug}_filter_option_name" do |option|
-            option_objects = cached_option_objects(filter_slug)
-            if option_objects.any?{|object| object.kind_of?(Hash) && object.has_key?(:name)}
-              option_object = option_objects.detect{|object| object[:state] == option.to_s}
+            filter_collection = @@filter_collections[filter_slug.to_sym]
+            if filter_collection.any?{|object| object.kind_of?(Hash) && object.has_key?(:name)}
+              option_object = filter_collection.detect{|object| object[:state] == option.to_s}
               option_object[:name]
-            elsif option_objects.any?{|object| object.respond_to?(:name)}
-              option_object = option_objects.detect{|object| object.send(:id).to_s == option.to_s}
+            elsif filter_collection.any?{|object| object.respond_to?(:name)}
+              option_object = filter_collection.detect{|object| object.send(:id).to_s == option.to_s}
               option_object.send(:name)
             else
               option.to_s
