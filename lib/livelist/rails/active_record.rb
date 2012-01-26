@@ -4,6 +4,12 @@ module Livelist
   module Rails
     module ActiveRecord
 
+      @@counts = {}
+      def filter_option_count(filter_slug, option)
+        @@counts[filter_slug] = send("#{filter_slug}_filter_counts") unless @@counts.has_key?(filter_slug)
+        @@counts[filter_slug][option.to_s] || 0
+      end
+
       def filters(*filter_slugs)
         @@filter_slugs = filter_slugs
         @@filter_slugs.each do |filter_slug|
@@ -79,10 +85,7 @@ module Livelist
             end
 
             define_method "#{filter_slug}_filter_option_count" do |option|
-              unless class_variables.include?("@@#{filter_slug}_filter_counts")
-                class_variable_set(:"@@#{filter_slug}_filter_counts", send("#{filter_slug}_filter_counts"))
-              end
-              class_variable_get(:"@@#{filter_slug}_filter_counts")[option.to_s] || 0
+              filter_option_count(filter_slug, option)
             end
 
             define_method "#{filter_slug}_filter_option" do |option, selected|
