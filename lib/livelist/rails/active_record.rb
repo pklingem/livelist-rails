@@ -14,9 +14,9 @@ module Livelist
         end
 
         def filters_as_json(filter_params)
-          filter_params ||= {}
+          @@filter_params = filter_params || {}
           @@filter_slugs.map do |filter|
-            filter_options = send("#{filter}_filters", filter_params[filter])
+            filter_options = send("#{filter}_filters", filter)
             send("#{filter}_filter", filter_options)
           end
         end
@@ -127,13 +127,13 @@ module Livelist
             }
           end
 
-          define_method "#{filter_slug}_filter_option_selected?" do |filter_params, option|
-            filter_params.nil? ? false : filter_params.include?(option.to_s)
+          define_method "#{filter_slug}_filter_option_selected?" do |filter, option|
+            @@filter_params[filter].nil? ? false : @@filter_params[filter].include?(option.to_s)
           end
 
-          define_method "#{filter_slug}_filters" do |filter_params|
+          define_method "#{filter_slug}_filters" do |filter|
             send("#{filter_slug}_filter_values").map do |option|
-              selected = send("#{filter_slug}_filter_option_selected?", filter_params, option)
+              selected = send("#{filter_slug}_filter_option_selected?", filter, option)
               send("#{filter_slug}_filter_option", option, selected)
             end
           end
