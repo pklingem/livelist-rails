@@ -5,9 +5,16 @@ module Livelist
     module ActiveRecord
 
       @@counts = {}
+      @@option_objects = {}
+
       def filter_option_count(filter_slug, option)
         @@counts[filter_slug] = send("#{filter_slug}_filter_counts") unless @@counts.has_key?(filter_slug)
         @@counts[filter_slug][option.to_s] || 0
+      end
+
+      def cached_option_objects(filter_slug)
+        @@option_objects[filter_slug] = send("#{filter_slug}_filter_option_objects") unless @@option_objects.has_key?(filter_slug)
+        @@option_objects[filter_slug]
       end
 
       def filters(*filter_slugs)
@@ -43,7 +50,7 @@ module Livelist
 
             define_method "#{filter_slug}_filter_values" do
               key = send("#{filter_slug}_filter_option_key_name")
-              option_objects = send("#{filter_slug}_filter_option_objects")
+              option_objects = cached_option_objects(filter_slug)
               if option_objects.any?{|object| object.kind_of?(Hash) && object.has_key?(key)}
                 option_objects.map{|object| object[key]}
               elsif option_objects.any?{|object| object.respond_to?(key)}
@@ -64,7 +71,7 @@ module Livelist
             end
 
             define_method "#{filter_slug}_filter_option_name" do |option|
-              option_objects = send("#{filter_slug}_filter_option_objects")
+              option_objects = cached_option_objects(filter_slug)
               if option_objects.any?{|object| object.kind_of?(Hash) && object.has_key?(:name)}
                 option_object = option_objects.detect{|object| object[:state] == option.to_s}
                 option_object[:name]
