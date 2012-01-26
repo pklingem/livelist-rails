@@ -21,13 +21,17 @@ module Livelist
           end
         end
 
+        def filter_relation(filter_params)
+          relation = scoped
+          filter_params.each do |filter, values|
+            relation = relation.send("#{filter}_relation", values)
+          end
+          relation
+        end
+
         def filter(filter_params)
           filter_params ||= {}
-          @@filter_relation = scoped
-          filter_params.each do |filter, values|
-            @@filter_relation = @@filter_relation.send("#{filter}_relation", values)
-          end
-          @@filter_relation
+          @@filter_relation = filter_relation(filter_params)
         end
 
         def filter_option_count(filter_slug, option)
