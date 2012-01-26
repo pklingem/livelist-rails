@@ -96,16 +96,11 @@ module Livelist
             end
 
             define_method "#{filter_slug}_filter_option" do |option, selected|
-              option_slug  = send("#{filter_slug}_filter_option_slug", option)
-              option_name  = send("#{filter_slug}_filter_option_name", option)
-              option_value = send("#{filter_slug}_filter_option_value", option)
-              option_count = send("#{filter_slug}_filter_option_count", option)
-
               {
-                :slug     => option_slug,
-                :name     => option_name,
-                :value    => option_value,
-                :count    => option_count,
+                :slug     => send("#{filter_slug}_filter_option_slug", option),
+                :name     => send("#{filter_slug}_filter_option_name", option),
+                :value    => send("#{filter_slug}_filter_option_value", option),
+                :count    => send("#{filter_slug}_filter_option_count", option),
                 :selected => selected
               }
             end
