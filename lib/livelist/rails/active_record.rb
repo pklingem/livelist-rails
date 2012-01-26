@@ -23,11 +23,11 @@ module Livelist
 
         def filter(filter_params)
           filter_params ||= {}
-          query = scoped
+          @@filter_relation = scoped
           filter_params.each do |filter, values|
-            query = query.send("#{filter}_relation", values)
+            @@filter_relation = @@filter_relation.send("#{filter}_relation", values)
           end
-          query
+          @@filter_relation
         end
 
         def filter_option_count(filter_slug, option)
@@ -81,7 +81,7 @@ module Livelist
           end
 
           define_method "#{filter_slug}_filter_counts" do
-            group(filter_slug).count
+            @@filter_relation.group(filter_slug).count
           end
 
           define_method "#{filter_slug}_filter_option_slug" do |option|
