@@ -76,8 +76,30 @@ module Livelist
             end
           end
 
+          define_method "#{filter_slug}_counts_group_by" do
+            filter_slug
+          end
+
+          define_method "#{filter_slug}_join" do
+            scoped
+          end
+
+          define_method "#{filter_slug}_where" do |values|
+            where(model_name.to_s.tableize => { filter_slug => values })
+          end
+
+          define_method "#{filter_slug}_counts_relation" do
+            scoped
+          end
+
           define_method "#{filter_slug}_filter_counts" do
-            @@filter_relation.group(filter_slug).count
+            query = scoped
+            @@filter_slugs.each do |slug|
+              query = query.send("#{slug}_join")
+              query = query.send("#{slug}_where", @@filter_params[slug]) unless slug.to_s == filter_slug
+            end
+            group_by = send("#{filter_slug}_counts_group_by")
+            query.group(group_by).count
           end
 
           define_method "#{filter_slug}_filter_option_slug" do |option|
@@ -135,7 +157,7 @@ module Livelist
           end
 
           define_method "#{filter_slug}_relation" do |values|
-            where(model_name.to_s.tableize => { filter_slug => values })
+            send("#{filter_slug}_join").send("#{filter_slug}_where", values)
           end
         end
       end
