@@ -88,12 +88,8 @@ module Livelist
             where(model_name.to_s.tableize => { filter_slug => values })
           end
 
-          define_method "#{filter_slug}_counts_relation" do
-            scoped
-          end
-
           define_method "#{filter_slug}_filter_counts" do
-            query = scoped
+            query = scoped.except(:order)
             @@filter_slugs.each do |slug|
               query = query.send("#{slug}_join")
               query = query.send("#{slug}_where", @@filter_params[slug]) unless slug.to_s == filter_slug
