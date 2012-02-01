@@ -24,8 +24,9 @@ module Livelist
 
         def filter_relation(filter_params)
           relation = scoped
-          filter_params.each do |filter, values|
-            relation = relation.send("#{filter}_relation", values)
+          @@filter_slugs.each do |filter_slug|
+            values = filter_params[filter_slug.to_s]
+            relation = relation.send("#{filter_slug}_relation", values) unless filter_params.empty?
           end
           relation
         end
@@ -92,7 +93,7 @@ module Livelist
             query = scoped.except(:order)
             @@filter_slugs.each do |slug|
               query = query.send("#{slug}_join")
-              query = query.send("#{slug}_where", @@filter_params[slug]) unless slug.to_s == filter_slug
+              query = query.send("#{slug}_where", @@filter_params[slug]) unless @@filter_params[filter_slug].nil? || (slug.to_s == filter_slug)
             end
             group_by = send("#{filter_slug}_counts_group_by")
             query.group(group_by).count
