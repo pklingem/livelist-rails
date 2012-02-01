@@ -51,7 +51,7 @@
     __extends(List, _super);
 
     function List(search, filters, pagination, globalOptions, options) {
-      var cookie, presets,
+      var presets,
         _this = this;
       if (options == null) options = {};
       this.renderIndex = __bind(this.renderIndex, this);
@@ -73,14 +73,7 @@
           page: params != null ? params.page : void 0
         });
       });
-      if (jQuery.cookie && this.filters.useCookies) {
-        cookie = jQuery.cookie(this.filters.cookieName);
-      }
-      if (this.filters.useCookies && cookie) {
-        presets = JSON.parse(cookie);
-      } else {
-        presets = this.filters.presets;
-      }
+      presets = this.filters.presets();
       this.fetch({
         presets: presets
       });
@@ -98,35 +91,15 @@
       this.data = data;
       this.render();
       this.pagination.render(this.data);
-      this.filters.filters = _.pluck(this.data.filters, 'filter_slug');
       return this.filters.render(this.data);
-    };
-
-    List.prototype.selections = function() {
-      var filters,
-        _this = this;
-      filters = {};
-      _.each(this.filters.filters, function(filter) {
-        return filters[filter] = _this.filters.filterSelections(filter);
-      });
-      return filters;
     };
 
     List.prototype.fetch = function(options) {
       var params, searchTerm;
       if (this.fetchRequest) this.fetchRequest.abort();
       searchTerm = this.search.searchTerm();
-      params = {
-        filters: {}
-      };
-      if (jQuery.isEmptyObject(options.presets)) {
-        params.filters = this.selections();
-        if (jQuery.cookie && !jQuery.isEmptyObject(params.filters)) {
-          jQuery.cookie(this.filters.cookieName, JSON.stringify(params.filters));
-        }
-      } else {
-        params.filters = options.presets;
-      }
+      params = {};
+      params.filters = this.filters.setPresets(options.presets);
       if (searchTerm) params.q = searchTerm;
       if (options.page) params.page = options.page;
       return this.fetchRequest = $.ajax({
@@ -140,10 +113,11 @@
     };
 
     List.prototype.render = function() {
-      var partials;
+      var listHTML, partials;
       partials = {};
       partials[this.resourceNameSingular] = this.listItemTemplate;
-      $(this.renderTo).html(Mustache.to_html(this.listTemplate, this.data, partials));
+      listHTML = Mustache.to_html(this.listTemplate, this.data, partials);
+      $(this.renderTo).html(listHTML);
       return this.removeFetchingIndication();
     };
 
@@ -151,7 +125,7 @@
 
   })(Utilities);
 
-  window.LiveList.version = '0.0.3';
+  window.LiveList.version = '0.0.4';
 
   window.Filters = (function(_super) {
 
@@ -163,9 +137,7 @@
       this.handleAdvancedOptionsClick = __bind(this.handleAdvancedOptionsClick, this);
       this.setOptions(globalOptions);
       this.filters = options.presets ? _.keys(options.presets) : [];
-      if (!this.filters.cookieName) {
-        this.filters.cookieName = 'livelist_filter_presets';
-      }
+      this.initializeCookies();
       this.setOptions(options);
       $('input.filter_option', this.renderTo).live('change', function() {
         return $(_this.listSelector).trigger(_this.eventName);
@@ -173,14 +145,52 @@
       $(this.advancedOptionsToggleSelector).click(this.handleAdvancedOptionsClick);
     }
 
-    Filters.prototype.filtersTemplate = '{{#filters}}\n<div class=\'filter\'>\n  <h3>\n    {{name}}\n  </h3>\n  <ul id=\'{{filter_slug}}_filter_options\'>\n    {{#options}}\n    <label>\n      <li>\n        <input {{#selected}}checked=\'checked\'{{/selected}}\n               class=\'left filter_option\'\n               id=\'filter_{{slug}}\'\n               name=\'filters[]\'\n               type=\'checkbox\'\n               value=\'{{value}}\' />\n        <div class=\'left filter_name\'>{{name}}</div>\n        <div class=\'right filter_count\'>{{count}}</div>\n        <div class=\'clear\'></div>\n      </li>\n    </label>\n    {{/options}}\n  </ul>\n</div>\n{{/filters}}';
-
-    Filters.prototype.filterValues = function(filter) {
-      return _.pluck($("." + filter + "_filter_input"), 'value');
+    Filters.prototype.initializeCookies = function() {
+      if (jQuery.cookie && this.useCookies && this.cookieName) {
+        return this.cookieName = 'livelist_filter_presets';
+      }
     };
 
-    Filters.prototype.filterSelections = function(filter) {
-      return _.pluck($("#" + filter + "_filter_options input.filter_option:checked"), 'value');
+    Filters.prototype.presets = function() {
+      var cookie;
+      if (jQuery.cookie && this.useCookies) {
+        cookie = jQuery.cookie(this.cookieName);
+      }
+      if (this.useCookies && cookie) {
+        return JSON.parse(cookie);
+      } else {
+        return this.presets;
+      }
+    };
+
+    Filters.prototype.setPresets = function(presets) {
+      var filters;
+      filters = {};
+      if (jQuery.isEmptyObject(presets)) {
+        filters = this.selections();
+        if (jQuery.cookie) this.setCookie();
+      } else {
+        filters = presets;
+      }
+      return filters;
+    };
+
+    Filters.prototype.setCookie = function(params_filters) {
+      if (!jQuery.isEmptyObject(params_filters)) {
+        return jQuery.cookie(this.cookieName, JSON.stringify(params_filters));
+      }
+    };
+
+    Filters.prototype.template = '{{#filters}}\n<div class=\'filter\'>\n  <h3>\n    {{name}}\n  </h3>\n  <ul id=\'{{filter_slug}}_filter_options\'>\n    {{#options}}\n    <label>\n      <li>\n        <input {{#selected}}checked=\'checked\'{{/selected}}\n               class=\'left filter_option\'\n               id=\'filter_{{slug}}\'\n               name=\'filters[]\'\n               type=\'checkbox\'\n               value=\'{{value}}\' />\n        <div class=\'left filter_name\'>{{name}}</div>\n        <div class=\'right filter_count\'>{{count}}</div>\n        <div class=\'clear\'></div>\n      </li>\n    </label>\n    {{/options}}\n  </ul>\n</div>\n{{/filters}}';
+
+    Filters.prototype.selections = function() {
+      var filters,
+        _this = this;
+      filters = {};
+      _.each(this.filters, function(filter) {
+        return filters[filter] = _.pluck($("#" + filter + "_filter_options input.filter_option:checked"), 'value');
+      });
+      return filters;
     };
 
     Filters.prototype.noFiltersSelected = function(data) {
@@ -192,7 +202,10 @@
     };
 
     Filters.prototype.render = function(data) {
-      $(this.renderTo).html(Mustache.to_html(this.filtersTemplate, data));
+      var filtersHTML;
+      this.filters = _.pluck(data.filters, 'filter_slug');
+      filtersHTML = Mustache.to_html(this.template, data);
+      $(this.renderTo).html(filtersHTML);
       if (this.noFiltersSelected(data) && data[this.resourceName].length > 0) {
         return $('input[type="checkbox"]', this.renderTo).attr('checked', 'checked');
       }
@@ -257,8 +270,10 @@
     };
 
     Pagination.prototype.render = function(data) {
+      var paginationHTML;
       this.pagination = this.paginationJSON(data.pagination);
-      return $(this.renderTo).html(Mustache.to_html(this.paginationTemplate, this.pagination));
+      paginationHTML = Mustache.to_html(this.paginationTemplate, this.pagination);
+      return $(this.renderTo).html(paginationHTML);
     };
 
     Pagination.prototype.handlePaginationLinkClick = function(event) {

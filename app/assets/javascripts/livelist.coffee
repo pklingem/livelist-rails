@@ -36,11 +36,7 @@ class window.List extends Utilities
 
     $(@renderTo).bind(@eventName, (event, params) => @fetch(presets: null, page: params?.page))
 
-    cookie = jQuery.cookie(@filters.cookieName) if jQuery.cookie && @filters.useCookies
-    if @filters.useCookies && cookie
-      presets = JSON.parse(cookie)
-    else
-      presets = @filters.presets
+    presets = @filters.presets()
     @fetch(presets: presets)
 
   displayFetchingIndication: => $(@renderTo).addClass(@fetchingIndicationClass)
@@ -50,55 +46,71 @@ class window.List extends Utilities
     @data = data
     @render()
     @pagination.render(@data)
-    @filters.filters = _.pluck( @data.filters, 'filter_slug' )
     @filters.render(@data)
-
-  selections: ->
-    filters = {}
-    _.each( @filters.filters, (filter) => filters[filter] = @filters.filterSelections( filter ) )
-    filters
 
   fetch: (options) ->
     @fetchRequest.abort() if @fetchRequest
     searchTerm = @search.searchTerm()
-    params = { filters: {} }
+    params = {}
+    params.filters = @filters.setPresets(options.presets)
 
-    if jQuery.isEmptyObject(options.presets)
-      params.filters = @selections()
-      if jQuery.cookie && not jQuery.isEmptyObject(params.filters)
-        jQuery.cookie(@filters.cookieName, JSON.stringify(params.filters))
-    else
-      params.filters = options.presets
+    if searchTerm
+      params.q = searchTerm
+    if options.page
+      params.page = options.page
 
-    if searchTerm then params.q = searchTerm
-    if options.page then params.page = options.page
     @fetchRequest = $.ajax(
-      url: @urlPrefix
-      dataType: 'json'
-      data: params
-      type: @httpMethod
-      beforeSend: @displayFetchingIndication
-      success: @renderIndex
+      url         : @urlPrefix
+      dataType    : 'json'
+      data        : params
+      type        : @httpMethod
+      beforeSend  : @displayFetchingIndication
+      success     : @renderIndex
     )
 
   render: ->
     partials = {}
     partials[@resourceNameSingular] = @listItemTemplate
-    $(@renderTo).html( Mustache.to_html(@listTemplate, @data, partials) )
+    listHTML = Mustache.to_html(@listTemplate, @data, partials)
+    $(@renderTo).html( listHTML )
     @removeFetchingIndication()
 
-window.LiveList.version = '0.0.3'
+window.LiveList.version = '0.0.4'
 
 class window.Filters extends Utilities
   constructor: (globalOptions, options = {}) ->
     @setOptions(globalOptions)
     @filters = if options.presets then _.keys(options.presets) else []
-    unless @filters.cookieName then @filters.cookieName = 'livelist_filter_presets'
+    @initializeCookies()
     @setOptions(options)
     $('input.filter_option', @renderTo).live( 'change', => $(@listSelector).trigger(@eventName) )
     $(@advancedOptionsToggleSelector).click(@handleAdvancedOptionsClick)
 
-  filtersTemplate: '''
+  initializeCookies: ->
+    if jQuery.cookie && @useCookies && @cookieName
+      @cookieName = 'livelist_filter_presets'
+
+  presets: ->
+    cookie = jQuery.cookie(@cookieName) if jQuery.cookie && @useCookies
+    if @useCookies && cookie
+      JSON.parse(cookie)
+    else
+      @presets
+
+  setPresets: (presets) ->
+    filters = {}
+    if jQuery.isEmptyObject(presets)
+      filters = @selections()
+      @setCookie() if jQuery.cookie
+    else
+      filters = presets
+    filters
+
+  setCookie: (params_filters) ->
+    if not jQuery.isEmptyObject(params_filters)
+      jQuery.cookie(@cookieName, JSON.stringify(params_filters))
+
+  template: '''
     {{#filters}}
     <div class='filter'>
       <h3>
@@ -125,8 +137,12 @@ class window.Filters extends Utilities
     {{/filters}}
   '''
 
-  filterValues:     (filter) -> _.pluck( $(".#{filter}_filter_input"), 'value' )
-  filterSelections: (filter) -> _.pluck( $("##{filter}_filter_options input.filter_option:checked"), 'value' )
+  selections: ->
+    filters = {}
+    _.each( @filters, (filter) =>
+      filters[filter] = _.pluck( $("##{filter}_filter_options input.filter_option:checked"), 'value' )
+    )
+    filters
 
   noFiltersSelected: (data) ->
     _.all( data.filters, (filter) ->
@@ -136,7 +152,9 @@ class window.Filters extends Utilities
     )
 
   render: (data) ->
-    $(@renderTo).html( Mustache.to_html(@filtersTemplate, data) )
+    @filters = _.pluck( data.filters, 'filter_slug' )
+    filtersHTML = Mustache.to_html(@template, data)
+    $(@renderTo).html( filtersHTML )
     if @noFiltersSelected(data) && data[@resourceName].length > 0
       $('input[type="checkbox"]', @renderTo).attr('checked', 'checked')
 
@@ -207,7 +225,8 @@ class window.Pagination extends Utilities
 
   render: (data) ->
     @pagination = @paginationJSON(data.pagination)
-    $(@renderTo).html( Mustache.to_html(@paginationTemplate, @pagination) )
+    paginationHTML = Mustache.to_html(@paginationTemplate, @pagination)
+    $(@renderTo).html( paginationHTML )
 
   handlePaginationLinkClick: (event) =>
     event.preventDefault()
