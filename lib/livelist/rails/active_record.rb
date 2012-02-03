@@ -10,7 +10,7 @@ module Livelist
         @@counts = {}
 
         @@filter_slugs << filter_slug unless @@filter_slugs.include?(filter_slug)
-        @@filter_collections[filter_slug] = options[:collection] || select("distinct #{filter_slug}").all
+        @@filter_collections[filter_slug] = options[:collection] || lambda { select("distinct #{filter_slug}") }
 
         define_class_methods(filter_slug)
 
@@ -40,6 +40,11 @@ module Livelist
           @@counts[filter_slug] = send("#{filter_slug}_filter_counts") unless @@counts.has_key?(filter_slug)
           @@counts[filter_slug][option.to_s] || 0
         end
+
+				def filter_collection(filter_slug)
+					collection = @@filter_collections[filter_slug.to_sym]
+					collection.respond_to?(:call) ? collection.call : collection
+				end
       end
 
       def define_class_methods(filter_slug)
@@ -69,11 +74,11 @@ module Livelist
 
           define_method "#{filter_slug}_filter_values" do
             key = send("#{filter_slug}_filter_option_key_name")
-            filter_collection = @@filter_collections[filter_slug.to_sym]
-            if filter_collection.any?{|object| object.kind_of?(Hash) && object.has_key?(key)}
-              filter_collection.map{|object| object[key]}
-            elsif filter_collection.any?{|object| object.respond_to?(key)}
-              filter_collection.map(&key)
+            collection = filter_collection(filter_slug)
+            if collection.any?{|object| object.kind_of?(Hash) && object.has_key?(key)}
+              collection.map{|object| object[key]}
+            elsif collection.any?{|object| object.respond_to?(key)}
+              collection.map(&key)
             end
           end
 
@@ -108,12 +113,12 @@ module Livelist
           end
 
           define_method "#{filter_slug}_filter_option_name" do |option|
-            filter_collection = @@filter_collections[filter_slug.to_sym]
-            if filter_collection.any?{|object| object.kind_of?(Hash) && object.has_key?(:name)}
-              option_object = filter_collection.detect{|object| object[:state] == option.to_s}
+            collection = filter_collection(filter_slug)
+            if collection.any?{|object| object.kind_of?(Hash) && object.has_key?(:name)}
+              option_object = collection.detect{|object| object[:state] == option.to_s}
               option_object[:name]
-            elsif filter_collection.any?{|object| object.respond_to?(:name)}
-              option_object = filter_collection.detect{|object| object.send(:id).to_s == option.to_s}
+            elsif collection.any?{|object| object.respond_to?(:name)}
+              option_object = collection.detect{|object| object.send(:id).to_s == option.to_s}
               option_object.send(:name)
             else
               option.to_s
