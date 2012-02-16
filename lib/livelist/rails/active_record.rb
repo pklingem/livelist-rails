@@ -19,8 +19,6 @@ module Livelist
             filter_options = send("#{filter}_filters", filter)
             send("#{filter}_filter", filter_options)
           end
-          @counts = nil
-          filters
         end
 
         def filter_relation(filter_params)
@@ -45,7 +43,7 @@ module Livelist
 				def filter_collection(filter_slug)
 					collection = @@filter_collections[filter_slug.to_sym]
           if collection.respond_to?(:call)
-            collection.call
+            collection.call.map(&filter_slug.to_sym)
           else
             collection
           end
@@ -56,14 +54,18 @@ module Livelist
         end
 
         def counts_relation(filter_slug, slug)
-          relation.send("#{slug}_join")
-          relation.send("#{filter_slug}_where", filter_collection(filter_slug)) unless exclude_filter_relation?(filter_slug, slug)
-          relation.send("#{slug}_where", @filter_params[slug]) unless exclude_filter_relation?(filter_slug, slug)
+          query = scoped
+          query = query.send("#{slug}_join")
+          query = query.send("#{slug}_where", filter_collection(slug))
+          query = query.send("#{slug}_where", @filter_params[slug]) unless exclude_filter_relation?(filter_slug, slug)
+          query
         end
 
         def filter_slug_filter_counts(filter_slug)
           query = scoped.except(:order)
-          @@filter_slugs.each { |slug| query.counts_relation(filter_slug, slug) }
+          @@filter_slugs.each do |slug|
+            query = query.counts_relation(filter_slug, slug)
+          end
           group_by = send("#{filter_slug}_counts_group_by")
           query.group(group_by).count
         end
@@ -105,10 +107,10 @@ module Livelist
             collection = filter_collection(filter_slug)
             if collection.any?{|object| object.kind_of?(Hash) && object.has_key?(key)}
               collection.map{|object| object[key]}
-            elsif collection.kind_of?(Array)
-              collection
             elsif collection.any?{|object| object.respond_to?(key)}
               collection.map(&key)
+            elsif collection.kind_of?(Array)
+              collection
             end
           end
 
