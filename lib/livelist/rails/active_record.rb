@@ -22,12 +22,13 @@ module Livelist
         end
 
         def filter_relation(filter_params)
-          relation = scoped
+          query = scoped
           @@filter_slugs.each do |filter_slug|
             values = filter_params[filter_slug.to_s]
-            relation = relation.send("#{filter_slug}_relation", values) unless filter_params.empty?
+            query = query.send("#{filter_slug}_where", filter_collection(filter_slug))
+            query = query.send("#{filter_slug}_relation", values) unless filter_params.empty?
           end
-          relation
+          query
         end
 
         def filter(filter_params)
