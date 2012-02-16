@@ -24,9 +24,10 @@ module Livelist
         def filter_relation(filter_params)
           query = scoped
           @@filter_slugs.each do |filter_slug|
-            values = filter_params[filter_slug.to_s]
-            query = query.send("#{filter_slug}_where", filter_collection(filter_slug))
-            query = query.send("#{filter_slug}_relation", values) unless filter_params.empty?
+            default_filter_values = filter_values(filter_slug)
+            params_filter_values = filter_params[filter_slug.to_s]
+            query = query.send("#{filter_slug}_join").send("#{filter_slug}_where", default_filter_values)
+            query = query.send("#{filter_slug}_relation", params_filter_values) unless filter_params.empty?
           end
           query
         end
@@ -34,6 +35,18 @@ module Livelist
         def filter(filter_params)
           filter_params ||= {}
           @filter_relation = filter_relation(filter_params)
+        end
+
+        def filter_values(filter_slug)
+          key = send("#{filter_slug}_filter_option_key_name")
+          collection = filter_collection(filter_slug)
+          if collection.any?{|object| object.kind_of?(Hash) && object.has_key?(key)}
+            collection.map{|object| object[key]}
+          elsif collection.any?{|object| object.respond_to?(key)}
+            collection.map(&key)
+          elsif collection.kind_of?(Array)
+            collection
+          end
         end
 
         def filter_option_count(filter_slug, option)
@@ -57,7 +70,7 @@ module Livelist
         def counts_relation(filter_slug, slug)
           query = scoped
           query = query.send("#{slug}_join")
-          query = query.send("#{slug}_where", filter_collection(slug))
+          query = query.send("#{slug}_where", filter_values(slug))
           query = query.send("#{slug}_where", @filter_params[slug]) unless exclude_filter_relation?(filter_slug, slug)
           query
         end
@@ -77,15 +90,16 @@ module Livelist
         metaclass = class << self; self; end
 
         metaclass.instance_eval do
-          define_method("#{filter_slug}_filter_name") { filter_slug.capitalize }
-          define_method("#{filter_slug}_filter_slug") { filter_slug }
-          define_method("#{filter_slug}_counts_group_by") { filter_slug }
-          define_method("#{filter_slug}_join") { scoped }
-          define_method("#{filter_slug}_where") { |values| where(model_name.to_s.tableize => { filter_slug => values }) }
-          define_method("#{filter_slug}_filter_counts") { filter_slug_filter_counts(filter_slug) }
+          define_method("#{filter_slug}_filter_values")          { filter_values(filter_slug) }
+          define_method("#{filter_slug}_filter_name")            { filter_slug.capitalize }
+          define_method("#{filter_slug}_filter_slug")            { filter_slug }
+          define_method("#{filter_slug}_counts_group_by")        { "#{model_name.tableize}.#{filter_slug}" }
+          define_method("#{filter_slug}_join")                   { scoped }
+          define_method("#{filter_slug}_filter_counts")          { filter_slug_filter_counts(filter_slug) }
           define_method("#{filter_slug}_filter_option_key_name") { new.respond_to?(filter_slug.to_sym) ? filter_slug.to_sym : :id }
-          define_method("#{filter_slug}_relation") { |values| send("#{filter_slug}_join").send("#{filter_slug}_where", values) }
-          define_method("#{filter_slug}_filter_option_count") { |option| filter_option_count(filter_slug, option) }
+          define_method("#{filter_slug}_where")                  { |values| where(model_name.tableize => { filter_slug => values }) }
+          define_method("#{filter_slug}_relation")               { |values| send("#{filter_slug}_where", values) }
+          define_method("#{filter_slug}_filter_option_count")    { |option| filter_option_count(filter_slug, option) }
 
           define_method("#{filter_slug}_filter_option_value") do |option|
             [String, Integer].any?{|klass| option.kind_of?(klass)} ? option.to_s : option.send(:id).to_s
@@ -101,18 +115,6 @@ module Livelist
               :name => send("#{filter_slug}_filter_name"),
               :options => options
             }
-          end
-
-          define_method "#{filter_slug}_filter_values" do
-            key = send("#{filter_slug}_filter_option_key_name")
-            collection = filter_collection(filter_slug)
-            if collection.any?{|object| object.kind_of?(Hash) && object.has_key?(key)}
-              collection.map{|object| object[key]}
-            elsif collection.any?{|object| object.respond_to?(key)}
-              collection.map(&key)
-            elsif collection.kind_of?(Array)
-              collection
-            end
           end
 
           define_method "#{filter_slug}_filter_option_slug" do |option|
