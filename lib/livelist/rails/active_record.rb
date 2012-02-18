@@ -6,9 +6,25 @@ module Livelist
       @@filter_slugs = []
       @@filter_collections = {}
 
+      def default_filter_collection(filter_slug)
+        lambda { select("distinct #{filter_slug}") }
+      end
+
+      def initialize_filter_collection(filter_slug, collection)
+        if collection
+          if collection.any?{|object| object.kind_of?(Hash)}
+            collection.map{|hash| HashWithIndifferentAccess.new(hash)}
+          else
+            collection
+          end
+        else
+          default_filter_collection(filter_slug)
+        end
+      end
+
       def filter_for(filter_slug, options = {})
         @@filter_slugs << filter_slug unless @@filter_slugs.include?(filter_slug)
-        @@filter_collections[filter_slug] = options[:collection] || lambda { select("distinct #{filter_slug}") }
+        @@filter_collections[filter_slug] = initialize_filter_collection(filter_slug, options[:collection])
 
         define_class_methods(filter_slug)
 
@@ -133,7 +149,7 @@ module Livelist
             collection = filter_collection(filter_slug)
             key = send("#{filter_slug}_name_key_or_method")
             if collection.any?{|object| object.kind_of?(Hash) && object.has_key?(key)}
-              option_object = collection.detect{|object| object[:state] == option.to_s}
+              option_object = collection.detect{|object| object[filter_slug.to_s] == option.to_s}
               option_object[key]
             elsif collection.any?{|object| object.respond_to?(key)}
               option_object = collection.detect{|object| object.send(:id).to_s == option.to_s}
