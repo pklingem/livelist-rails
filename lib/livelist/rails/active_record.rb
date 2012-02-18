@@ -50,7 +50,7 @@ module Livelist
         end
 
         def filter_option_count(filter_slug, option)
-          @counts[filter_slug] ||= send("#{filter_slug}_filter_counts")
+          @counts[filter_slug] ||= send("#{filter_slug}_filter_counts").stringify_keys
           @counts[filter_slug][option.to_s] || 0
         end
 
