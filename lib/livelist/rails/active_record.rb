@@ -101,6 +101,10 @@ module Livelist
           define_method("#{filter_slug}_relation")               { |values| send("#{filter_slug}_where", values) }
           define_method("#{filter_slug}_filter_option_count")    { |option| filter_option_count(filter_slug, option) }
 
+          define_method("#{filter_slug}_name_key_or_method") do
+            :name
+          end
+
           define_method("#{filter_slug}_filter_option_value") do |option|
             [String, Integer].any?{|klass| option.kind_of?(klass)} ? option.to_s : option.send(:id).to_s
           end
@@ -127,12 +131,13 @@ module Livelist
 
           define_method "#{filter_slug}_filter_option_name" do |option|
             collection = filter_collection(filter_slug)
-            if collection.any?{|object| object.kind_of?(Hash) && object.has_key?(:name)}
+            key = send("#{filter_slug}_name_key_or_method")
+            if collection.any?{|object| object.kind_of?(Hash) && object.has_key?(key)}
               option_object = collection.detect{|object| object[:state] == option.to_s}
-              option_object[:name]
-            elsif collection.any?{|object| object.respond_to?(:name)}
+              option_object[key]
+            elsif collection.any?{|object| object.respond_to?(key)}
               option_object = collection.detect{|object| object.send(:id).to_s == option.to_s}
-              option_object.send(:name)
+              option_object.send(key)
             else
               option.to_s
             end
