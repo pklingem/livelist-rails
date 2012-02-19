@@ -22,6 +22,14 @@ module Livelist
         end
       end
 
+      def association_filter?(filter_slug)
+        reflect_on_all_associations.map(&:name).include?(filter_slug.to_sym)
+      end
+
+      def attribute_filter?(filter_slug)
+        column_names.include?(filter_slug)
+      end
+
       def filter_for(filter_slug, options = {})
         @@filter_slugs << filter_slug unless @@filter_slugs.include?(filter_slug)
         @@filter_collections[filter_slug] = initialize_filter_collection(filter_slug, options[:collection])
@@ -31,7 +39,7 @@ module Livelist
         def filters_as_json(filter_params)
           @counts = {}
           @filter_params = filter_params || {}
-          filters = @@filter_slugs.map do |filter|
+          @@filter_slugs.map do |filter|
             filter_options = send("#{filter}_filters", filter)
             send("#{filter}_filter", filter_options)
           end
@@ -67,7 +75,11 @@ module Livelist
 
         def filter_option_count(filter_slug, option)
           @counts[filter_slug] ||= send("#{filter_slug}_filter_counts").stringify_keys
-          @counts[filter_slug][option.to_s] || 0
+          if association_filter?(filter_slug)
+            @counts[filter_slug][option.send(:id).to_s] || 0
+          elsif attribute_filter?(filter_slug)
+            @counts[filter_slug][option.to_s] || 0
+          end
         end
 
 				def filter_collection(filter_slug)
@@ -152,7 +164,11 @@ module Livelist
               option_object = collection.detect{|object| object[filter_slug.to_s] == option.to_s}
               option_object[key]
             elsif collection.any?{|object| object.respond_to?(key)}
-              option_object = collection.detect{|object| object.send(:id).to_s == option.to_s}
+              if association_filter?(filter_slug)
+                option_object = collection.detect{|object| object.send(:id).to_s == option.send(:id).to_s}
+              elsif attribute_filter?(filter_slug)
+                option_object = collection.detect{|object| object.send(:id).to_s == option.to_s}
+              end
               option_object.send(key)
             else
               option.to_s
