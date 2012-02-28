@@ -1,5 +1,5 @@
 class FilterOption
-	attr_accessor :slug, :name, :count
+	attr_accessor :slug, :name, :count, :value
 
 	def initialize(options = {})
 		@slug = options[:slug]

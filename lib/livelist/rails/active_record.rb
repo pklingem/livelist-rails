@@ -1,25 +1,25 @@
 require 'active_record'
 require 'livelist/rails/filter'
+require 'livelist/rails/filter_collection'
 
 module Livelist
   module Rails
     module ActiveRecord
-      def association_filter?(filter_slug)
-        reflect_on_all_associations.map(&:name).include?(filter_slug.to_sym)
-      end
-
-      def attribute_filter?(filter_slug)
-        column_names.include?(filter_slug)
-      end
 
       def filter_for(filter_slug, options = {})
-        Filter.new(:model_name => model_name, :slug => filter_slug, :collection => options[:collection])
+        @filter_collection ||= FilterCollection.new
+        @filter_collection.create_filter(
+          :model_name => model_name,
+          :slug       => filter_slug,
+          :collection => options[:collection],
+          :group_by   => options[:group_by]
+        )
         define_class_methods(filter_slug)
 
         def filters_as_json(filter_params)
           @counts = {}
           @filter_params = filter_params || {}
-          Filter.slugs.map do |filter|
+          @filter_collection.slugs.map do |filter|
             filter_options = send("#{filter}_filters", filter)
             send("#{filter}_filter", filter_options)
           end
@@ -27,7 +27,7 @@ module Livelist
 
         def filter_relation(filter_params)
           query = scoped
-          Filter.all.each do |filter|
+          @filter_collection.filters.each do |filter|
             default_filter_values = filter.values
             params_filter_values = filter_params[filter.slug.to_s]
             query = query.send("#{filter.slug}_join").send("#{filter.slug}_where", default_filter_values)
@@ -43,7 +43,7 @@ module Livelist
 
         def filter_values(filter_slug)
           key = send("#{filter_slug}_filter_option_key_name")
-          filter = Filter.find_by_slug(filter_slug)
+          filter = @filter_collection.find_filter(filter_slug)
           collection = filter.collection
           if collection.any?{|object| object.kind_of?(Hash) && object.has_key?(key)}
             collection.map{|object| object[key]}
@@ -56,7 +56,7 @@ module Livelist
 
         def filter_option_count(filter_slug, option)
           @counts[filter_slug] ||= send("#{filter_slug}_filter_counts").stringify_keys
-          filter = Filter.find_by_slug(filter_slug)
+          filter = @filter_collection.find_filter(filter_slug)
           case filter.type
           when :association then @counts[filter_slug][option.send(:id).to_s] || 0
           when :attribute   then @counts[filter_slug][option.to_s] || 0
@@ -76,11 +76,12 @@ module Livelist
         end
 
         def filter_slug_filter_counts(filter_slug)
+          filter = @filter_collection.find_filter(filter_slug)
           query = scoped.except(:order)
-          Filter.slugs.each do |slug|
+          @filter_collection.slugs.each do |slug|
             query = query.counts_relation(filter_slug, slug)
           end
-          group_by = send("#{filter_slug}_counts_group_by")
+          group_by = filter.group_by
           query.group(group_by).count
         end
       end
@@ -90,13 +91,12 @@ module Livelist
         metaclass = class << self; self; end
 
         metaclass.instance_eval do
-          define_method("#{filter_slug}_filter_values")          { Filter.find_by_slug(filter_slug).values }
-          define_method("#{filter_slug}_filter_name")            { Filter.find_by_slug(filter_slug).name }
-          define_method("#{filter_slug}_filter_slug")            { Filter.find_by_slug(filter_slug).slug }
-          define_method("#{filter_slug}_counts_group_by")        { "#{model_name.tableize}.#{filter_slug}" }
+          define_method("#{filter_slug}_filter_values")          { @filter_collection.find_filter(filter_slug).values }
+          define_method("#{filter_slug}_filter_name")            { @filter_collection.find_filter(filter_slug).name }
+          define_method("#{filter_slug}_filter_slug")            { @filter_collection.find_filter(filter_slug).slug }
           define_method("#{filter_slug}_join")                   { scoped }
           define_method("#{filter_slug}_filter_counts")          { filter_slug_filter_counts(filter_slug) }
-          define_method("#{filter_slug}_filter_option_key_name") { Filter.find_by_slug(filter_slug).key_name }
+          define_method("#{filter_slug}_filter_option_key_name") { @filter_collection.find_filter(filter_slug).key_name }
           define_method("#{filter_slug}_where")                  { |values| where(model_name.tableize => { filter_slug => values }) }
           define_method("#{filter_slug}_relation")               { |values| send("#{filter_slug}_where", values) }
           define_method("#{filter_slug}_filter_option_count")    { |option| filter_option_count(filter_slug, option) }
@@ -114,7 +114,7 @@ module Livelist
           end
 
           define_method "#{filter_slug}_filter" do |options|
-            filter = Filter.find_by_slug(filter_slug)
+            filter = @filter_collection.find_filter(filter_slug)
             {
               :filter_slug => filter.slug,
               :name => filter.name,
@@ -131,7 +131,7 @@ module Livelist
           end
 
           define_method "#{filter_slug}_filter_option_name" do |option|
-            filter = Filter.find_by_slug(filter_slug)
+            filter = @filter_collection.find_filter(filter_slug)
             collection = filter.collection
             key = send("#{filter_slug}_name_key_or_method")
             if collection.any?{|object| object.kind_of?(Hash) && object.has_key?(key)}
@@ -150,7 +150,7 @@ module Livelist
           end
 
           define_method "#{filter_slug}_filter_option" do |option, selected|
-            filter = Filter.find_by_slug(filter_slug)
+            filter = @filter_collection.find_filter(filter_slug)
             {
               :slug     => filter.slug,
               :name     => filter.name,
@@ -161,7 +161,7 @@ module Livelist
           end
 
           define_method "#{filter_slug}_filters" do |filter|
-            filter = Filter.find_by_slug(filter_slug)
+            filter = @filter_collection.find_filter(filter_slug)
             filter.values.map do |option|
               selected = send("#{filter_slug}_filter_option_selected?", filter, option)
               send("#{filter_slug}_filter_option", option, selected)
