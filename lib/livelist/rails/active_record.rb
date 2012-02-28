@@ -29,6 +29,7 @@ module Livelist
         def filter_relation(filter_params)
           query = scoped
           Filter.all.each do |filter|
+            debugger
             default_filter_values = filter.values
             params_filter_values = filter_params[filter.slug.to_s]
             query = query.send("#{filter.slug}_join").send("#{filter.slug}_where", default_filter_values)
@@ -138,12 +139,12 @@ module Livelist
               option_object = collection.detect{|object| object[filter_slug.to_s] == option.to_s}
               option_object[key]
             elsif collection.any?{|object| object.respond_to?(key)}
-              if filter.type == :assocation
-                option_object = collection.detect{|object| object.send(:id).to_s == option.send(:id).to_s}
+              if filter.type == :association
+                option_object = collection.detect{|object| object.send(:id) == option}
               elsif filter.type == :attribute
                 option_object = collection.detect{|object| object.send(:id).to_s == option.to_s}
               end
-              option.send(key)
+              option_object.send(key)
             else
               option.to_s
             end

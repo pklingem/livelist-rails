@@ -10,12 +10,12 @@ module Livelist
 
       # slug should always be a symbol
       def initialize(options = {})
-        @slug = options[:slug].to_sym
-        @model_name = options[:model_name]
-        @collection = initialize_collection(options[:collection])
-        @type = options[:type] || initialize_type
-        @key_name = options[:key_name] || default_key_name
-        @values = initialize_values
+        @slug            = options[:slug].to_sym
+        @model_name      = options[:model_name]
+        @collection      = initialize_collection(options[:collection])
+        @type            = options[:type] || initialize_type
+        @key_name        = options[:key_name] || default_key_name
+        @values          = initialize_values
         @@filters[@slug] = self
       end
 
@@ -66,7 +66,7 @@ module Livelist
       end
 
       def self.all
-        @@filters
+        @@filters.values
       end
 
       def self.find_by_slug(slug)
