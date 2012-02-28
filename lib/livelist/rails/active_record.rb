@@ -41,19 +41,6 @@ module Livelist
           @filter_relation = filter_relation(filter_params)
         end
 
-        def filter_values(filter_slug)
-          key = send("#{filter_slug}_filter_option_key_name")
-          filter = @filter_collection.find_filter(filter_slug)
-          collection = filter.collection
-          if collection.any?{|object| object.kind_of?(Hash) && object.has_key?(key)}
-            collection.map{|object| object[key]}
-          elsif collection.any?{|object| object.respond_to?(key)}
-            collection.map(&key)
-          elsif collection.kind_of?(Array)
-            collection
-          end
-        end
-
         def filter_option_count(filter_slug, option)
           @counts[filter_slug] ||= send("#{filter_slug}_filter_counts").stringify_keys
           filter = @filter_collection.find_filter(filter_slug)
@@ -68,9 +55,10 @@ module Livelist
         end
 
         def counts_relation(filter_slug, slug)
+          filter = @filter_collection.find_filter(slug)
           query = scoped
           query = query.send("#{slug}_join")
-          query = query.send("#{slug}_where", filter_values(slug))
+          query = query.send("#{slug}_where", filter.values)
           query = query.send("#{slug}_where", @filter_params[slug]) unless exclude_filter_relation?(filter_slug, slug)
           query
         end
@@ -91,7 +79,6 @@ module Livelist
         metaclass = class << self; self; end
 
         metaclass.instance_eval do
-          define_method("#{filter_slug}_filter_values")          { @filter_collection.find_filter(filter_slug).values }
           define_method("#{filter_slug}_filter_name")            { @filter_collection.find_filter(filter_slug).name }
           define_method("#{filter_slug}_filter_slug")            { @filter_collection.find_filter(filter_slug).slug }
           define_method("#{filter_slug}_join")                   { scoped }
