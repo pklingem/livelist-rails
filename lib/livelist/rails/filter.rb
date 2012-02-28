@@ -1,20 +1,23 @@
 require 'active_record'
+require 'livelist/rails/filter_option'
 
 module Livelist
   module Rails
 
     class Filter
-      attr_accessor :slug, :collection, :key_name, :model_name, :type, :values
+      attr_accessor :slug, :name, :collection, :key_name, :model_name, :type, :values, :filter_options
 
       @@filters = {}
 
       # slug should always be a symbol
       def initialize(options = {})
         @slug            = options[:slug].to_sym
+        @name            = options[:name] || @slug.to_s.capitalize
         @model_name      = options[:model_name]
-        @collection      = initialize_collection(options[:collection])
         @type            = options[:type] || initialize_type
         @key_name        = options[:key_name] || default_key_name
+        @filter_options  = initialize_filter_options(options[:collection])
+        @collection      = @filter_options.map(&:slug)
         @values          = initialize_values
         @@filters[@slug] = self
       end
@@ -22,7 +25,7 @@ module Livelist
       def default_key_name
         case @type
         when :association then :id
-        when :attribute then @slug
+        when :attribute   then @slug
         end
       end
 
@@ -41,17 +44,11 @@ module Livelist
         lambda { select("distinct #{@slug}") }
       end
 
-      def initialize_collection(collection)
-        if collection
-          if collection.respond_to?(:call)
-            collection.call.map(&filter_slug.to_sym)
-          elsif collection.any?{|object| object.kind_of?(Hash)}
-            collection.map{|hash| HashWithIndifferentAccess.new(hash)}
-          else
-            collection
-          end
-        else
-          default_collection
+      def initialize_filter_options(collection)
+        collection ||= default_collection
+        collection = collection.call if collection.respond_to?(:call)
+        collection.map do |filter_option|
+          FilterOption.new(:slug => filter_option[@key_name], :name => filter_option[:name])
         end
       end
 

@@ -14,7 +14,6 @@ module Livelist
 
       def filter_for(filter_slug, options = {})
         Filter.new(:model_name => model_name, :slug => filter_slug, :collection => options[:collection])
-
         define_class_methods(filter_slug)
 
         def filters_as_json(filter_params)
@@ -29,7 +28,6 @@ module Livelist
         def filter_relation(filter_params)
           query = scoped
           Filter.all.each do |filter|
-            debugger
             default_filter_values = filter.values
             params_filter_values = filter_params[filter.slug.to_s]
             query = query.send("#{filter.slug}_join").send("#{filter.slug}_where", default_filter_values)
@@ -58,10 +56,10 @@ module Livelist
 
         def filter_option_count(filter_slug, option)
           @counts[filter_slug] ||= send("#{filter_slug}_filter_counts").stringify_keys
-          if association_filter?(filter_slug)
-            @counts[filter_slug][option.send(:id).to_s] || 0
-          elsif attribute_filter?(filter_slug)
-            @counts[filter_slug][option.to_s] || 0
+          filter = Filter.find_by_slug(filter_slug)
+          case filter.type
+          when :association then @counts[filter_slug][option.send(:id).to_s] || 0
+          when :attribute   then @counts[filter_slug][option.to_s] || 0
           end
         end
 
@@ -93,8 +91,8 @@ module Livelist
 
         metaclass.instance_eval do
           define_method("#{filter_slug}_filter_values")          { Filter.find_by_slug(filter_slug).values }
-          define_method("#{filter_slug}_filter_name")            { filter_slug.capitalize }
-          define_method("#{filter_slug}_filter_slug")            { filter_slug }
+          define_method("#{filter_slug}_filter_name")            { Filter.find_by_slug(filter_slug).name }
+          define_method("#{filter_slug}_filter_slug")            { Filter.find_by_slug(filter_slug).slug }
           define_method("#{filter_slug}_counts_group_by")        { "#{model_name.tableize}.#{filter_slug}" }
           define_method("#{filter_slug}_join")                   { scoped }
           define_method("#{filter_slug}_filter_counts")          { filter_slug_filter_counts(filter_slug) }
@@ -116,9 +114,10 @@ module Livelist
           end
 
           define_method "#{filter_slug}_filter" do |options|
+            filter = Filter.find_by_slug(filter_slug)
             {
-              :filter_slug => send("#{filter_slug}_filter_slug"),
-              :name => send("#{filter_slug}_filter_name"),
+              :filter_slug => filter.slug,
+              :name => filter.name,
               :options => options
             }
           end
@@ -151,9 +150,10 @@ module Livelist
           end
 
           define_method "#{filter_slug}_filter_option" do |option, selected|
+            filter = Filter.find_by_slug(filter_slug)
             {
-              :slug     => send("#{filter_slug}_filter_option_slug", option),
-              :name     => send("#{filter_slug}_filter_option_name", option),
+              :slug     => filter.slug,
+              :name     => filter.name,
               :value    => send("#{filter_slug}_filter_option_value", option),
               :count    => send("#{filter_slug}_filter_option_count", option),
               :selected => selected
