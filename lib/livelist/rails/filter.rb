@@ -5,12 +5,23 @@ module Livelist
   module Rails
 
     class Filter
-      attr_accessor :slug, :name, :collection, :key_name, :model_name, :type, :values, :filter_options, :group_by
+      attr_accessor :slug,
+                    :name,
+                    :collection,
+                    :key_name,
+                    :model_name,
+                    :group_by,
+                    :join,
+                    :type,
+                    :values,
+                    :filter_options
 
       # slug should always be a symbol
       def initialize(options = {})
         @slug            = options[:slug].to_sym
         @name            = options[:name] || @slug.to_s.capitalize
+        @base_query      = options[:base_query]
+        @join            = options[:join] || @base_query
         @model_name      = options[:model_name]
         @group_by        = options[:group_by] || "#{model_name.tableize}.#{@slug}"
         @type            = options[:type] || initialize_type

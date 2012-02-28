@@ -11,7 +11,9 @@ module Livelist
         @filter_collection.create_filter(
           :model_name => model_name,
           :slug       => filter_slug,
+          :base_query => scoped,
           :collection => options[:collection],
+          :join       => options[:join],
           :group_by   => options[:group_by]
         )
         define_class_methods(filter_slug)
@@ -30,7 +32,8 @@ module Livelist
           @filter_collection.filters.each do |filter|
             default_filter_values = filter.values
             params_filter_values = filter_params[filter.slug.to_s]
-            query = query.send("#{filter.slug}_join").send("#{filter.slug}_where", default_filter_values)
+            query = query.includes(filter.join) if filter.type == :association
+            query = query.send("#{filter.slug}_where", default_filter_values)
             query = query.send("#{filter.slug}_relation", params_filter_values) unless filter_params.empty?
           end
           query
@@ -57,7 +60,7 @@ module Livelist
         def counts_relation(filter_slug, slug)
           filter = @filter_collection.find_filter(slug)
           query = scoped
-          query = query.send("#{slug}_join")
+          query = query.includes(filter.join) if filter.type == :association
           query = query.send("#{slug}_where", filter.values)
           query = query.send("#{slug}_where", @filter_params[slug]) unless exclude_filter_relation?(filter_slug, slug)
           query
@@ -81,7 +84,6 @@ module Livelist
         metaclass.instance_eval do
           define_method("#{filter_slug}_filter_name")            { @filter_collection.find_filter(filter_slug).name }
           define_method("#{filter_slug}_filter_slug")            { @filter_collection.find_filter(filter_slug).slug }
-          define_method("#{filter_slug}_join")                   { scoped }
           define_method("#{filter_slug}_filter_counts")          { filter_slug_filter_counts(filter_slug) }
           define_method("#{filter_slug}_filter_option_key_name") { @filter_collection.find_filter(filter_slug).key_name }
           define_method("#{filter_slug}_where")                  { |values| where(model_name.tableize => { filter_slug => values }) }
