@@ -22,7 +22,7 @@ module Livelist
         end
 
         def filter_option_count(filter, option)
-          @counts[filter.slug] ||= filter_slug_filter_counts(filter.slug).stringify_keys
+          @counts[filter.slug] ||= filter_counts(filter).stringify_keys
           case filter.type
           when :association then @counts[filter.slug][option.send(:id).to_s] || 0
           when :attribute   then @counts[filter.slug][option.to_s] || 0
@@ -54,41 +54,29 @@ module Livelist
           end
         end
 
-        def filter_relation(filter_params)
-          query = scoped
-          @filter_collection.filters.each do |filter|
-            default_filter_values = filter.values
-            params_filter_values = filter_params[filter.slug.to_s]
-            query = query.includes(filter.join) if filter.type == :association
-            query = query.where(filter.where(default_filter_values))
-            query = query.where(filter.where(params_filter_values)) unless filter_params.empty?
-          end
-          query
-        end
-
         def filter(filter_params)
           filter_params ||= {}
-          @filter_relation = filter_relation(filter_params)
+          @filter_relation = @filter_collection.relation(filter_params, scoped)
         end
 
         def exclude_filter_relation?(slug, filter)
           @filter_params[slug].nil? || (filter.slug.to_s == slug)
         end
 
-        def counts_relation(slug, filter)
+        def counts_relation(exclude_params_relation, filter)
           query = scoped
           query = query.includes(filter.join) if filter.type == :association
           query = query.where(filter.where(filter.values))
-          query = query.where(filter.where(@filter_params[filter.slug])) unless exclude_filter_relation?(slug, filter)
+          query = query.where(filter.where(@filter_params[filter.slug])) unless exclude_params_relation
           query
         end
 
-        def filter_slug_filter_counts(slug)
+        def filter_counts(filter)
           query = scoped.except(:order)
-          @filter_collection.filters.each do |filter|
-            query = query.counts_relation(slug, filter)
+          @filter_collection.filters.each do |filter1|
+            exclude_params_relation = exclude_filter_relation?(filter.slug, filter1)
+            query = query.counts_relation(exclude_params_relation, filter1)
           end
-          filter = @filter_collection.find_filter(slug)
           group_by = filter.group_by
           query.group(group_by).count
         end
