@@ -38,8 +38,30 @@ module Livelist
         end
       end
 
+      def table_name
+        case @type
+        when :association then @slug
+        when :attribute   then model_name.tableize
+        end
+      end
+
+      def model_class
+        @model_name.classify.constantize
+      end
+
+      def where(values)
+        { table_name => { @key_name => values } }
+      end
+
+      def as_json(options)
+        {
+          :filter_slug => @slug,
+          :name => @name,
+          :options => options
+        }
+      end
+
       def initialize_type
-        model_class = @model_name.classify.constantize
         if model_class.column_names.include?(@slug.to_s)
           :attribute
         elsif model_class.reflect_on_all_associations.map(&:name).include?(@slug)
