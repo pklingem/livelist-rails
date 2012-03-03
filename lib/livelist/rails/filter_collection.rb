@@ -11,7 +11,7 @@ class FilterCollection < HashWithIndifferentAccess
 
   def relation(filter_params, query)
     filters.each do |filter|
-      default_filter_values = filter.values
+      default_filter_values = filter.option_slugs
       params_filter_values = filter_params[filter.slug.to_s]
       query = query.includes(filter.join) if filter.type == :association
       query = query.where(filter.where(default_filter_values))

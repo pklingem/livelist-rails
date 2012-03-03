@@ -12,8 +12,7 @@ module Livelist
                     :model_name,
                     :group_by,
                     :join,
-                    :type,
-                    :values
+                    :type
 
       # slug should always be a symbol
       def initialize(options = {})
@@ -27,7 +26,6 @@ module Livelist
         @type              = options[:type] || initialize_type
         @key_name          = options[:key_name] || default_key_name
         @filter_option_collection = FilterOptionCollection.new(:filter => self, :collection => options[:collection], :slug => @key_name)
-        @values            = initialize_values
       end
 
       def exclude_filter_relation?(matching_filter, params)
@@ -46,7 +44,7 @@ module Livelist
 
       def counts_relation(query, params, exclude_params_relation)
         query = query.includes(@join) if @type == :association
-        query = query.where(where(@values))
+        query = query.where(where(option_slugs))
         query = query.where(where(params)) unless exclude_params_relation
         query
       end
@@ -69,8 +67,8 @@ module Livelist
         @model_name.classify.constantize
       end
 
-      def where(values)
-        { table_name => { @key_name => values } }
+      def where(slug_params)
+        { table_name => { @key_name => slug_params } }
       end
 
       def as_json(options)
@@ -93,10 +91,6 @@ module Livelist
 
       def option_slugs
         @filter_option_collection.slugs
-      end
-
-      def initialize_values
-        option_slugs
       end
     end
 

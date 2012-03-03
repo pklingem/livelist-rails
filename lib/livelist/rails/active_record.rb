@@ -39,7 +39,7 @@ module Livelist
         end
 
         def filters(filter)
-          filter.values.map do |option|
+          filter.option_slugs.map do |option|
             selected = @filter_params[filter.slug].nil? ? false : @filter_params[filter.slug].include?(option.to_s)
             filter_option(filter, option, selected)
           end
