@@ -63,19 +63,11 @@ module Livelist
           @filter_params[slug].nil? || (filter.slug.to_s == slug)
         end
 
-        def counts_relation(exclude_params_relation, filter)
-          query = scoped
-          query = query.includes(filter.join) if filter.type == :association
-          query = query.where(filter.where(filter.values))
-          query = query.where(filter.where(@filter_params[filter.slug])) unless exclude_params_relation
-          query
-        end
-
         def filter_counts(filter)
           query = scoped.except(:order)
           @filter_collection.filters.each do |filter1|
             exclude_params_relation = exclude_filter_relation?(filter.slug, filter1)
-            query = query.counts_relation(exclude_params_relation, filter1)
+            query = query.merge(filter1.counts_relation(query, @filter_params[filter1.slug], exclude_params_relation))
           end
           group_by = filter.group_by
           query.group(group_by).count

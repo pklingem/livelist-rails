@@ -31,6 +31,13 @@ module Livelist
         @values          = initialize_values
       end
 
+      def counts_relation(query, params, exclude_params_relation)
+        query = query.includes(@join) if @type == :association
+        query = query.where(where(@values))
+        query = query.where(where(params)) unless exclude_params_relation
+        query
+      end
+
       def default_key_name
         case @type
         when :association then :id
