@@ -17,10 +17,6 @@ module Livelist
           :group_by   => options[:group_by]
         )
 
-        def filter_option_value(option)
-          [String, Integer].any?{|klass| option.kind_of?(klass)} ? option.to_s : option.send(:id).to_s
-        end
-
         def filter_option_count(filter, option)
           case filter.type
           when :association then @counts[filter.slug][option.send(:id).to_s] || 0
@@ -32,7 +28,7 @@ module Livelist
           {
             :slug     => filter.slug,
             :name     => filter.name,
-            :value    => filter_option_value(option),
+            :value    => option.to_s,
             :count    => filter_option_count(filter, option),
             :selected => selected
           }
