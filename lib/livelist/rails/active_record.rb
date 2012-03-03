@@ -65,9 +65,9 @@ module Livelist
 
         def filter_counts(filter)
           query = scoped.except(:order)
-          @filter_collection.filters.each do |filter1|
-            exclude_params_relation = exclude_filter_relation?(filter.slug, filter1)
-            query = query.merge(filter1.counts_relation(query, @filter_params[filter1.slug], exclude_params_relation))
+          @filter_collection.filters.each do |matching_filter|
+            exclude_params_relation = filter.exclude_filter_relation?(matching_filter, @filter_params[filter.slug])
+            query = query.merge(matching_filter.counts_relation(query, @filter_params[matching_filter.slug], exclude_params_relation))
           end
           group_by = filter.group_by
           query.group(group_by).count
