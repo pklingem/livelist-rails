@@ -26,4 +26,10 @@ class FilterOptionCollection < HashWithIndifferentAccess
 	def slugs
 		options.map(&:slug)
 	end
+
+	def counts=(counts_hash)
+		options.each do |option|
+			option.count = counts_hash[option.slug.to_s] || 0
+		end
+	end
 end

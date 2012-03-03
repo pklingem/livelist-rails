@@ -12,7 +12,8 @@ module Livelist
                     :model_name,
                     :group_by,
                     :join,
-                    :type
+                    :type,
+                    :option_collection
 
       # slug should always be a symbol
       def initialize(options = {})
@@ -25,7 +26,7 @@ module Livelist
         @group_by          = options[:group_by] || "#{model_name.tableize}.#{@slug}"
         @type              = options[:type] || initialize_type
         @key_name          = options[:key_name] || default_key_name
-        @filter_option_collection = FilterOptionCollection.new(:filter => self, :collection => options[:collection], :slug => @key_name)
+        @option_collection = FilterOptionCollection.new(:filter => self, :collection => options[:collection], :slug => @key_name)
       end
 
       def exclude_filter_relation?(matching_filter, params)
@@ -90,7 +91,7 @@ module Livelist
       end
 
       def option_slugs
-        @filter_option_collection.slugs
+        @option_collection.slugs
       end
     end
 

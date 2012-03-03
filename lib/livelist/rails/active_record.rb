@@ -17,35 +17,27 @@ module Livelist
           :group_by   => options[:group_by]
         )
 
-        def filter_option_count(filter, option)
-          case filter.type
-          when :association then @counts[filter.slug][option.send(:id).to_s] || 0
-          when :attribute   then @counts[filter.slug][option.to_s] || 0
-          end
-        end
-
         def filter_option(filter, option, selected)
           {
             :slug     => filter.slug,
             :name     => filter.name,
-            :value    => option.to_s,
-            :count    => filter_option_count(filter, option),
+            :value    => option.slug.to_s,
+            :count    => option.count,
             :selected => selected
           }
         end
 
         def filters(filter)
-          filter.option_slugs.map do |option|
-            selected = @filter_params[filter.slug].nil? ? false : @filter_params[filter.slug].include?(option.to_s)
+          filter.option_collection.options.map do |option|
+            selected = @filter_params[filter.slug].nil? ? false : @filter_params[filter.slug].include?(option.slug.to_s)
             filter_option(filter, option, selected)
           end
         end
 
         def filters_as_json(filter_params)
-          @counts = {}
           @filter_params = filter_params || {}
           @filter_collection.filters.map do |filter|
-            @counts[filter.slug] ||= filter.counts(scoped, @filter_params)
+            filter.option_collection.counts = filter.counts(scoped, @filter_params)
             filter.as_json(filters(filter))
           end
         end
