@@ -11,7 +11,7 @@ class FilterOptionCollection < HashWithIndifferentAccess
 		@slug       = options[:slug]
 
 		@collection.each do |option|
-			create_option(:slug => option[@slug], :name => option[:name])
+			create_option(:filter => @filter, :slug => option[@slug], :name => option[:name])
 		end
 	end
 

@@ -17,19 +17,10 @@ module Livelist
           :group_by   => options[:group_by]
         )
 
-        def filter_option(filter, option, params)
-          {
-            :slug     => filter.slug,
-            :name     => filter.name,
-            :value    => option.slug.to_s,
-            :count    => option.count,
-            :selected => option.selected?(params)
-          }
-        end
-
         def filters(filter)
           filter.option_collection.options.map do |option|
-            filter_option(filter, option, @filter_params[filter.slug])
+            params = @filter_params[filter.slug]
+            option.as_json(params)
           end
         end
 
