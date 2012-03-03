@@ -1,5 +1,6 @@
 require 'active_record'
 require 'livelist/rails/filter_option'
+require 'livelist/rails/filter_option_collection'
 
 module Livelist
   module Rails
@@ -7,14 +8,12 @@ module Livelist
     class Filter
       attr_accessor :slug,
                     :name,
-                    :collection,
                     :key_name,
                     :model_name,
                     :group_by,
                     :join,
                     :type,
-                    :values,
-                    :filter_options
+                    :values
 
       # slug should always be a symbol
       def initialize(options = {})
@@ -27,8 +26,7 @@ module Livelist
         @group_by          = options[:group_by] || "#{model_name.tableize}.#{@slug}"
         @type              = options[:type] || initialize_type
         @key_name          = options[:key_name] || default_key_name
-        @filter_options    = initialize_filter_options(options[:collection])
-        @collection        = @filter_options.map(&:slug)
+        @filter_option_collection = FilterOptionCollection.new(:filter => self, :collection => options[:collection], :slug => @key_name)
         @values            = initialize_values
       end
 
@@ -42,7 +40,8 @@ module Livelist
           exclude_params_relation = exclude_filter_relation?(matching_filter, params[@slug])
           query = query.merge(matching_filter.counts_relation(query, params[matching_filter.slug], exclude_params_relation))
         end
-        query.group(@group_by).count.stringify_keys
+        counts = query.group(@group_by).count.stringify_keys
+        counts
       end
 
       def counts_relation(query, params, exclude_params_relation)
@@ -92,26 +91,12 @@ module Livelist
         end
       end
 
-      def default_collection
-        lambda { select("distinct #{@slug}") }
-      end
-
-      def initialize_filter_options(collection)
-        collection ||= default_collection
-        collection = collection.call if collection.respond_to?(:call)
-        collection.map do |filter_option|
-          FilterOption.new(:slug => filter_option[@key_name], :name => filter_option[:name])
-        end
+      def option_slugs
+        @filter_option_collection.slugs
       end
 
       def initialize_values
-        if collection.any?{|object| object.kind_of?(Hash) && object.has_key?(key_name)}
-          collection.map{|object| object[key_name]}
-        elsif collection.any?{|object| object.respond_to?(key_name)}
-          collection.map(&key_name)
-        elsif collection.kind_of?(Array)
-          collection
-        end
+        option_slugs
       end
     end
 

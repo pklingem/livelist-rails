@@ -22,7 +22,6 @@ module Livelist
         end
 
         def filter_option_count(filter, option)
-          @counts[filter.slug] ||= filter.counts(scoped, @filter_params)
           case filter.type
           when :association then @counts[filter.slug][option.send(:id).to_s] || 0
           when :attribute   then @counts[filter.slug][option.to_s] || 0
@@ -50,6 +49,7 @@ module Livelist
           @counts = {}
           @filter_params = filter_params || {}
           @filter_collection.filters.map do |filter|
+            @counts[filter.slug] ||= filter.counts(scoped, @filter_params)
             filter.as_json(filters(filter))
           end
         end
