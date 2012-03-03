@@ -22,7 +22,7 @@ module Livelist
         end
 
         def filter_option_count(filter, option)
-          @counts[filter.slug] ||= filter_counts(filter).stringify_keys
+          @counts[filter.slug] ||= filter.counts(scoped, @filter_params)
           case filter.type
           when :association then @counts[filter.slug][option.send(:id).to_s] || 0
           when :attribute   then @counts[filter.slug][option.to_s] || 0
@@ -57,20 +57,6 @@ module Livelist
         def filter(filter_params)
           filter_params ||= {}
           @filter_relation = @filter_collection.relation(filter_params, scoped)
-        end
-
-        def exclude_filter_relation?(slug, filter)
-          @filter_params[slug].nil? || (filter.slug.to_s == slug)
-        end
-
-        def filter_counts(filter)
-          query = scoped.except(:order)
-          @filter_collection.filters.each do |matching_filter|
-            exclude_params_relation = filter.exclude_filter_relation?(matching_filter, @filter_params[filter.slug])
-            query = query.merge(matching_filter.counts_relation(query, @filter_params[matching_filter.slug], exclude_params_relation))
-          end
-          group_by = filter.group_by
-          query.group(group_by).count
         end
       end
     end

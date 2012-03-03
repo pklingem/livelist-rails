@@ -18,21 +18,31 @@ module Livelist
 
       # slug should always be a symbol
       def initialize(options = {})
-        @slug            = options[:slug].to_sym
-        @name            = options[:name] || @slug.to_s.capitalize
-        @base_query      = options[:base_query]
-        @join            = options[:join] || @base_query
-        @model_name      = options[:model_name]
-        @group_by        = options[:group_by] || "#{model_name.tableize}.#{@slug}"
-        @type            = options[:type] || initialize_type
-        @key_name        = options[:key_name] || default_key_name
-        @filter_options  = initialize_filter_options(options[:collection])
-        @collection      = @filter_options.map(&:slug)
-        @values          = initialize_values
+        @filter_collection = options[:filter_collection]
+        @slug              = options[:slug].to_sym
+        @name              = options[:name] || @slug.to_s.capitalize
+        @base_query        = options[:base_query]
+        @join              = options[:join] || @base_query
+        @model_name        = options[:model_name]
+        @group_by          = options[:group_by] || "#{model_name.tableize}.#{@slug}"
+        @type              = options[:type] || initialize_type
+        @key_name          = options[:key_name] || default_key_name
+        @filter_options    = initialize_filter_options(options[:collection])
+        @collection        = @filter_options.map(&:slug)
+        @values            = initialize_values
       end
 
       def exclude_filter_relation?(matching_filter, params)
         params.nil? || (self == matching_filter)
+      end
+
+      def counts(query, params)
+        query = query.except(:order)
+        @filter_collection.filters.each do |matching_filter|
+          exclude_params_relation = exclude_filter_relation?(matching_filter, params[@slug])
+          query = query.merge(matching_filter.counts_relation(query, params[matching_filter.slug], exclude_params_relation))
+        end
+        query.group(@group_by).count.stringify_keys
       end
 
       def counts_relation(query, params, exclude_params_relation)

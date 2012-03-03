@@ -5,6 +5,7 @@ class FilterCollection < HashWithIndifferentAccess
 	alias :find_filter :[]
 
 	def create_filter(options)
+    options.merge!(:filter_collection => self)
 		self[options[:slug]] = Livelist::Rails::Filter.new(options)
 	end
 
