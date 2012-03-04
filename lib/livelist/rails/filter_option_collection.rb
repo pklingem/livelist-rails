@@ -32,4 +32,10 @@ class FilterOptionCollection < HashWithIndifferentAccess
 			option.count = counts_hash[option.slug.to_s] || 0
 		end
 	end
+
+  def as_json(params)
+    options.map do |option|
+      option.as_json(params)
+    end
+  end
 end
