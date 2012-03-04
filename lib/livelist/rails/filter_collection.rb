@@ -9,14 +9,10 @@ class FilterCollection < HashWithIndifferentAccess
 		self[options[:slug]] = Livelist::Rails::Filter.new(options)
 	end
 
-  def relation(query, filter_params)
-    filter_params ||= {}
+  def relation(query, params)
+    params ||= {}
     filters.each do |filter|
-      default_filter_values = filter.option_slugs
-      params_filter_values = filter_params[filter.slug.to_s]
-      query = query.includes(filter.join) if filter.type == :association
-      query = query.where(filter.where(default_filter_values))
-      query = query.where(filter.where(params_filter_values)) unless filter_params.empty?
+      filter.relation(query, params)
     end
     query
   end
