@@ -10,7 +10,6 @@ module Livelist
                     :name,
                     :key_name,
                     :model_name,
-                    :group_by,
                     :join,
                     :type,
                     :option_collection
@@ -21,10 +20,16 @@ module Livelist
         @slug              = options[:slug].to_sym
         @name              = options[:name] || @slug.to_s.capitalize
         @model_name        = options[:model_name]
-        @group_by          = options[:group_by] || "#{model_name.tableize}.#{@slug}"
         @type              = options[:type] || initialize_type
         @key_name          = options[:key_name] || default_key_name
         @option_collection = FilterOptionCollection.new(:filter => self, :collection => options[:collection], :slug => @key_name)
+      end
+
+      def group_by
+        case @type
+        when :attribute then "#{model_name.tableize}.#{@slug}"
+        when :association then "#{@slug}.id"
+        end
       end
 
       def exclude_filter_relation?(matching_filter, params)
@@ -45,7 +50,7 @@ module Livelist
         @filter_collection.filters.each do |filter|
           query = counts_relation(query, filter, params)
         end
-        query.except(:order).group(@group_by).count.stringify_keys
+        query.except(:order).group(group_by).count.stringify_keys
       end
 
       def relation(query, params, exclude_params_relation)

@@ -11,8 +11,7 @@ module Livelist
         @filter_collection.create_filter(
           :model_name => model_name,
           :slug       => slug,
-          :collection => options[:collection],
-          :group_by   => options[:group_by]
+          :collection => options[:collection]
         )
 
         def filters_as_json(params)
