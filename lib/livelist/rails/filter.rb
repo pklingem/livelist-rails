@@ -20,8 +20,6 @@ module Livelist
         @filter_collection = options[:filter_collection]
         @slug              = options[:slug].to_sym
         @name              = options[:name] || @slug.to_s.capitalize
-        @base_query        = options[:base_query]
-        @join              = options[:join] || @base_query
         @model_name        = options[:model_name]
         @group_by          = options[:group_by] || "#{model_name.tableize}.#{@slug}"
         @type              = options[:type] || initialize_type
@@ -51,7 +49,7 @@ module Livelist
       end
 
       def relation(query, params, exclude_params_relation)
-        query = query.includes(@join) if @type == :association
+        query = query.includes(@slug) if @type == :association
         query = query.where(where(option_slugs))
         query = query.where(where(params)) unless exclude_params_relation
         query

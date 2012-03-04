@@ -11,9 +11,7 @@ module Livelist
         @filter_collection.create_filter(
           :model_name => model_name,
           :slug       => slug,
-          :base_query => scoped,
           :collection => options[:collection],
-          :join       => options[:join],
           :group_by   => options[:group_by]
         )
 
