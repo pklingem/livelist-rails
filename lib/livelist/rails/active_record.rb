@@ -21,7 +21,7 @@ module Livelist
           @filter_params = filter_params || {}
           @filter_collection.filters.map do |filter|
             filter.option_collection.counts = filter.counts(scoped, @filter_params)
-            filter.as_json(filter.option_collection.as_json(@filter_params[filter.slug]))
+            filter.as_json(@filter_params[filter.slug])
           end
         end
 

@@ -72,11 +72,11 @@ module Livelist
         { table_name => { @key_name => slug_params } }
       end
 
-      def as_json(options)
+      def as_json(params)
         {
           :filter_slug => @slug,
           :name => @name,
-          :options => options
+          :options => @option_collection.as_json(params)
         }
       end
 
