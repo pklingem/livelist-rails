@@ -14,7 +14,7 @@ class FilterOption
 	def as_json(params)
 		{
 			:slug     => @filter.slug,
-			:name     => @filter.name,
+			:name     => @name,
 			:value    => @slug.to_s,
 			:count    => @count,
 			:selected => selected?(params)
