@@ -6,23 +6,23 @@ module Livelist
   module Rails
     module ActiveRecord
 
-      def filter_for(filter_slug, options = {})
+      def filter_for(slug, options = {})
         @filter_collection ||= FilterCollection.new
         @filter_collection.create_filter(
           :model_name => model_name,
-          :slug       => filter_slug,
+          :slug       => slug,
           :base_query => scoped,
           :collection => options[:collection],
           :join       => options[:join],
           :group_by   => options[:group_by]
         )
 
-        def filters_as_json(filter_params)
-          @filter_collection.as_json(scoped, filter_params)
+        def filters_as_json(params)
+          @filter_collection.as_json(scoped, params)
         end
 
-        def filter(filter_params)
-          @filter_collection.relation(scoped, filter_params)
+        def filter(params)
+          @filter_collection.relation(scoped, params)
         end
       end
     end
