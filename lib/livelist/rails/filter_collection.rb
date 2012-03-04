@@ -18,7 +18,7 @@ class FilterCollection < HashWithIndifferentAccess
   def as_json(query, params)
     params ||= {}
     filters.map do |filter|
-      filter.option_collection.counts = filter.counts(query, params)
+      filter.set_option_counts(query, params)
       filter.as_json(params[filter.slug])
     end
   end

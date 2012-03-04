@@ -33,6 +33,10 @@ module Livelist
         params.nil? || (self == matching_filter)
       end
 
+      def set_option_counts(query, params)
+        @option_collection.counts = counts(query, params)
+      end
+
       def counts(query, params)
         query = query.except(:order)
         @filter_collection.filters.each do |matching_filter|
