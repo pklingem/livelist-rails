@@ -11,7 +11,9 @@ class FilterCollection < HashWithIndifferentAccess
 
   def relation(query, params)
     params ||= {}
-    filters.each { |filter| filter.relation(query, params[filter.slug.to_s], params.empty?) }
+    filters.each do |filter|
+      query = filter.relation(query, params[filter.slug.to_s], params.empty?)
+    end
     query
   end
 
