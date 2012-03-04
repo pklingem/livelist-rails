@@ -56,10 +56,9 @@ module Livelist
       end
 
       def relation(query, params)
-        default_filter_values = @option_slugs
         params_filter_values = params[@slug.to_s]
         query = query.includes(@join) if @type == :association
-        query = query.where(where(default_filter_values))
+        query = query.where(where(option_slugs))
         query = query.where(where(params_filter_values)) unless params.empty?
         query
       end
