@@ -40,7 +40,7 @@ module Livelist
       def counts_relation(query, filter, params)
           exclude_params_relation = exclude_filter_relation?(filter, params[@slug])
           counts_scope = filter.relation(query, params[filter.slug], exclude_params_relation)
-          query = query.merge(counts_scope)
+          query.merge(counts_scope)
       end
 
       def counts(query, params)
@@ -48,8 +48,7 @@ module Livelist
         @filter_collection.filters.each do |filter|
           query = counts_relation(query, filter, params)
         end
-        counts = query.group(@group_by).count.stringify_keys
-        counts
+        query.group(@group_by).count.stringify_keys
       end
 
       def relation(query, params, exclude_params_relation)
