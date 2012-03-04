@@ -41,25 +41,17 @@ module Livelist
         query = query.except(:order)
         @filter_collection.filters.each do |matching_filter|
           exclude_params_relation = exclude_filter_relation?(matching_filter, params[@slug])
-          counts_scope = matching_filter.counts_relation(query, params[matching_filter.slug], exclude_params_relation)
+          counts_scope = matching_filter.relation(query, params[matching_filter.slug], exclude_params_relation)
           query = query.merge(counts_scope)
         end
         counts = query.group(@group_by).count.stringify_keys
         counts
       end
 
-      def counts_relation(query, params, exclude_params_relation)
+      def relation(query, params, exclude_params_relation)
         query = query.includes(@join) if @type == :association
         query = query.where(where(option_slugs))
         query = query.where(where(params)) unless exclude_params_relation
-        query
-      end
-
-      def relation(query, params)
-        params_filter_values = params[@slug.to_s]
-        query = query.includes(@join) if @type == :association
-        query = query.where(where(option_slugs))
-        query = query.where(where(params_filter_values)) unless params.empty?
         query
       end
 
