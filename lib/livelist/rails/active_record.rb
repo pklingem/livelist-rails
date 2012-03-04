@@ -18,13 +18,11 @@ module Livelist
         )
 
         def filters_as_json(filter_params)
-          @filter_params = filter_params || {}
-          @filter_collection.as_json(@filter_params, scoped)
+          @filter_collection.as_json(scoped, filter_params)
         end
 
         def filter(filter_params)
-          filter_params ||= {}
-          @filter_relation = @filter_collection.relation(filter_params, scoped)
+          @filter_collection.relation(scoped, filter_params)
         end
       end
     end

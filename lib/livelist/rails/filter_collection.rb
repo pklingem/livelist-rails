@@ -9,7 +9,8 @@ class FilterCollection < HashWithIndifferentAccess
 		self[options[:slug]] = Livelist::Rails::Filter.new(options)
 	end
 
-  def relation(filter_params, query)
+  def relation(query, filter_params)
+    filter_params ||= {}
     filters.each do |filter|
       default_filter_values = filter.option_slugs
       params_filter_values = filter_params[filter.slug.to_s]
@@ -20,7 +21,8 @@ class FilterCollection < HashWithIndifferentAccess
     query
   end
 
-  def as_json(params, query)
+  def as_json(query, params)
+    params ||= {}
     filters.map do |filter|
       filter.option_collection.counts = filter.counts(query, params)
       filter.as_json(params[filter.slug])
