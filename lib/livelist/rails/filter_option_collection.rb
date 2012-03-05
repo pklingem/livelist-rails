@@ -23,25 +23,32 @@ module Livelist
         @filter.model_class.select("distinct #{@filter.slug}")
       end
 
-      def option_params(option)
+      def name_param(option)
         if [String, Symbol, Integer].any?{|klass| option.kind_of?(klass)}
-          options = {
-            :slug => option,
-            :name => option
-          }
+          option
+        elsif option.kind_of?(Hash) && option.has_key?(:name)
+          option[:name]
+        elsif option.respond_to?(:name)
+          option.name
         else
-          options = {
-            :slug => option[@slug]
-          }
-          if option.kind_of?(Hash) && option.has_key?(:name)
-            options.merge!(:name => option[:name])
-          elsif option.respond_to?(:name)
-            options.merge!(:name => option.name)
-          else
-            options.merge!(:name => option[@slug])
-          end
+         option[@slug]
         end
-        options.merge!(:filter => @filter)
+      end
+
+      def slug_param(option)
+        if [String, Symbol, Integer].any?{|klass| option.kind_of?(klass)}
+          option
+        else
+          option[@slug]
+        end
+      end
+
+      def option_params(option)
+        options = {
+          :filter => @filter,
+          :slug   => slug_param(option),
+          :name   => name_param(option)
+        }
       end
 
       def create_option(option)
