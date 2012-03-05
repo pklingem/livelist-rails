@@ -23,7 +23,7 @@ module Livelist
         @filter.model_class.select("distinct #{@filter.slug}")
       end
 
-      def create_option(option)
+      def option_params(option)
         if [String, Symbol, Integer].any?{|klass| option.kind_of?(klass)}
           options = {
             :slug => option,
@@ -42,7 +42,11 @@ module Livelist
           end
         end
         options.merge!(:filter => @filter)
-        self[options[:slug]] = FilterOption.new(options)	
+      end
+
+      def create_option(option)
+        params = option_params(option)
+        self[params[:slug]] = FilterOption.new(params)	
       end
 
       def slugs
