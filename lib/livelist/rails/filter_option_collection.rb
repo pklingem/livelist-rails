@@ -7,6 +7,7 @@ module Livelist
     class FilterOptionCollection < HashWithIndifferentAccess
       alias :options :values
       alias :find_option :[]
+      attr_reader :slug
 
       def initialize(options)
         @filter     = options[:filter]
@@ -23,37 +24,9 @@ module Livelist
         @filter.model_class.select("distinct #{@filter.slug}")
       end
 
-      def name_param(option)
-        if [String, Symbol, Integer].any?{|klass| option.kind_of?(klass)}
-          option
-        elsif option.kind_of?(Hash) && option.has_key?(:name)
-          option[:name]
-        elsif option.respond_to?(:name)
-          option.name
-        else
-         option[@slug]
-        end
-      end
-
-      def slug_param(option)
-        if [String, Symbol, Integer].any?{|klass| option.kind_of?(klass)}
-          option
-        else
-          option[@slug]
-        end
-      end
-
-      def option_params(option)
-        options = {
-          :filter => @filter,
-          :slug   => slug_param(option),
-          :name   => name_param(option)
-        }
-      end
-
       def create_option(option)
-        params = option_params(option)
-        self[params[:slug]] = FilterOption.new(params)	
+        filter_option = FilterOption.new(:filter => @filter, :option_collection => self, :option => option)
+        self[filter_option.slug] = filter_option
       end
 
       def slugs

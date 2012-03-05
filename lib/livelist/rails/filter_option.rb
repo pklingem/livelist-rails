@@ -5,9 +5,30 @@ module Livelist
       attr_accessor :slug, :name, :count, :value
 
       def initialize(options = {})
-        @slug   = options[:slug]
-        @name   = options[:name]
-        @filter = options[:filter]
+        @option_collection = options[:option_collection]
+        @slug              = slug_param(options[:option])
+        @name              = name_param(options[:option])
+        @filter            = options[:filter]
+      end
+
+      def name_param(option)
+        if [String, Symbol, Integer].any?{|klass| option.kind_of?(klass)}
+          option
+        elsif option.kind_of?(Hash) && option.has_key?(:name)
+          option[:name]
+        elsif option.respond_to?(:name)
+          option.name
+        else
+         option[@option_collection.slug]
+        end
+      end
+
+      def slug_param(option)
+        if [String, Symbol, Integer].any?{|klass| option.kind_of?(klass)}
+          option
+        else
+          option[@option_collection.slug]
+        end
       end
 
       def selected?(params)
