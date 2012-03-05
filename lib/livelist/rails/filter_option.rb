@@ -6,29 +6,9 @@ module Livelist
 
       def initialize(options = {})
         @option_collection = options[:option_collection]
-        @slug              = slug_param(options[:option])
-        @name              = name_param(options[:option])
+        @slug              = infer_slug(options[:option])
+        @name              = infer_name(options[:option])
         @filter            = options[:filter]
-      end
-
-      def name_param(option)
-        if [String, Symbol, Integer].any?{|klass| option.kind_of?(klass)}
-          option
-        elsif option.kind_of?(Hash) && option.has_key?(:name)
-          option[:name]
-        elsif option.respond_to?(:name)
-          option.name
-        else
-         option[@option_collection.slug]
-        end
-      end
-
-      def slug_param(option)
-        if [String, Symbol, Integer].any?{|klass| option.kind_of?(klass)}
-          option
-        else
-          option[@option_collection.slug]
-        end
       end
 
       def selected?(params)
@@ -43,6 +23,28 @@ module Livelist
           :count    => @count,
           :selected => selected?(params)
         }
+      end
+
+    private
+
+      def infer_slug(option)
+        if [String, Symbol, Integer].any?{|klass| option.kind_of?(klass)}
+          option
+        else
+          option[@option_collection.slug]
+        end
+      end
+
+      def infer_name(option)
+        if [String, Symbol, Integer].any?{|klass| option.kind_of?(klass)}
+          option
+        elsif option.kind_of?(Hash) && option.has_key?(:name)
+          option[:name]
+        elsif option.respond_to?(:name)
+          option.name
+        else
+         option[@option_collection.slug]
+        end
       end
     end
 
