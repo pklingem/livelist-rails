@@ -1,3 +1,4 @@
+require 'active_support/hash_with_indifferent_access'
 require 'livelist/rails/filter_option'
 
 module Livelist
@@ -14,15 +15,33 @@ module Livelist
         @slug       = options[:slug]
 
         @collection.each do |option|
-          create_option(:filter => @filter, :slug => option[@slug], :name => option[:name])
+          create_option(option)
         end
       end
 
       def default_collection
-        lambda { select("distinct #{@filter.slug}") }
+        @filter.model_class.select("distinct #{@filter.slug}")
       end
 
-      def create_option(options)
+      def create_option(option)
+        if [String, Symbol, Integer].any?{|klass| option.kind_of?(klass)}
+          options = {
+            :slug => option,
+            :name => option
+          }
+        else
+          options = {
+            :slug => option[@slug]
+          }
+          if option.kind_of?(Hash) && option.has_key?(:name)
+            options.merge!(:name => option[:name])
+          elsif option.respond_to?(:name)
+            options.merge!(:name => option.name)
+          else
+            options.merge!(:name => option[@slug])
+          end
+        end
+        options.merge!(:filter => @filter)
         self[options[:slug]] = FilterOption.new(options)	
       end
 

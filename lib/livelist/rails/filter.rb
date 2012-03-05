@@ -1,5 +1,4 @@
 require 'active_record'
-require 'livelist/rails/filter_option'
 require 'livelist/rails/filter_option_collection'
 
 module Livelist
@@ -10,6 +9,7 @@ module Livelist
                     :name,
                     :key_name,
                     :model_name,
+                    :model_class,
                     :join,
                     :type,
                     :option_collection

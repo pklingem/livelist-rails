@@ -1,3 +1,4 @@
+require 'active_support/hash_with_indifferent_access'
 require 'livelist/rails/filter'
 
 module Livelist

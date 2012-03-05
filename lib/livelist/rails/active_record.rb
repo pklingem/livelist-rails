@@ -1,5 +1,4 @@
 require 'active_record'
-require 'livelist/rails/filter'
 require 'livelist/rails/filter_collection'
 
 module Livelist
@@ -22,6 +21,7 @@ module Livelist
           @filter_collection.relation(scoped, params)
         end
       end
+
     end
   end
 end
