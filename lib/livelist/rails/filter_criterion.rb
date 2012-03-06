@@ -3,7 +3,7 @@ require 'active_record'
 module Livelist
   module Rails
 
-    class FilterOption
+    class FilterCriterion
       attr_accessor :slug,
                     :name,
                     :count,

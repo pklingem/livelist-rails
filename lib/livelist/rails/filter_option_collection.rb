@@ -1,12 +1,12 @@
 require 'active_support/hash_with_indifferent_access'
-require 'livelist/rails/filter_option'
+require 'livelist/rails/filter_criterion'
 
 module Livelist
   module Rails
 
     class FilterOptionCollection < HashWithIndifferentAccess
-      alias :options :values
-      alias :find_option :[]
+      alias :criteria :values
+      alias :find_criteria :[]
       attr_reader :slug
 
       def initialize(options)
@@ -16,7 +16,7 @@ module Livelist
         @slug       = options[:slug]
 
         @collection.each do |option|
-          create_option(option)
+          create_criterion(option)
         end
       end
 
@@ -24,24 +24,24 @@ module Livelist
         @filter.model_class.select("distinct #{@filter.slug}")
       end
 
-      def create_option(option)
-        filter_option = FilterOption.new(:filter => @filter, :option_collection => self, :option => option)
-        self[filter_option.slug] = filter_option
+      def create_criterion(option)
+        filter_criterion = FilterCriterion.new(:filter => @filter, :option_collection => self, :option => option)
+        self[filter_criterion.slug] = filter_criterion
       end
 
       def slugs
-        options.map(&:slug)
+        criteria.map(&:slug)
       end
 
       def counts=(counts_hash)
-        options.each do |option|
-          option.count = counts_hash[option.slug.to_s] || 0
+        criteria.each do |criterion|
+          criterion.count = counts_hash[criterion.slug.to_s] || 0
         end
       end
 
       def as_json(params)
-        options.map do |option|
-          option.as_json(params)
+        criteria.map do |criterion|
+          criterion.as_json(params)
         end
       end
     end
