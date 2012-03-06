@@ -15,8 +15,8 @@ module Livelist
         @collection = @collection.call if @collection.respond_to?(:call)
         @slug       = options[:slug]
 
-        @collection.each do |option|
-          create_criterion(option)
+        @collection.each do |reference|
+          create_criterion(reference)
         end
       end
 
@@ -24,8 +24,8 @@ module Livelist
         @filter.model_class.select("distinct #{@filter.slug}")
       end
 
-      def create_criterion(option)
-        filter_criterion = FilterCriterion.new(:filter => @filter, :criteria => self, :option => option)
+      def create_criterion(reference)
+        filter_criterion = FilterCriterion.new(:filter => @filter, :criteria => self, :reference => reference)
         self[filter_criterion.slug] = filter_criterion
       end
 

@@ -12,12 +12,13 @@ module Livelist
                     :name_key
 
       def initialize(options = {})
-        @filter   = options[:filter]
-        @criteria = options[:criteria]
-        @type     = infer_type(options[:option])
-        @name_key = options[:name_key] || infer_name_key(options[:option])
-        @slug     = infer_slug(options[:option])
-        @name     = infer_name(options[:option])
+        @filter    = options[:filter]
+        @criteria  = options[:criteria]
+        @reference = options[:reference]
+        @type      = infer_type
+        @name_key  = options[:name_key] || infer_name_key
+        @slug      = infer_slug
+        @name      = infer_name
       end
 
       def selected?(params)
@@ -36,42 +37,42 @@ module Livelist
 
     private
 
-      def infer_type(option)
-        raise ArgumentError, "option is not valid \n #{option.inspect}" if option.nil?
-        if [String, Symbol, Integer].any?{|klass| option.kind_of?(klass)}
+      def infer_type
+        raise ArgumentError, "reference is not valid \n #{@reference.inspect}" if @reference.nil?
+        if [String, Symbol, Integer].any?{|klass| @reference.kind_of?(klass)}
           :scalar
-        elsif option.kind_of?(Hash)
+        elsif @reference.kind_of?(Hash)
           :hash
         else
           :model
         end
       end
 
-      def infer_name_key(option)
+      def infer_name_key
         case @type
         when :scalar then nil
         when :hash then :name
         when :model
-          if option.respond_to?(:name)
+          if @reference.respond_to?(:name)
             :name
-          elsif option.respond_to?(@criteria.slug)
+          elsif @reference.respond_to?(@criteria.slug)
             @criteria.slug
           end
         end
       end
 
-      def infer_slug(option)
+      def infer_slug
         case @type
-        when :scalar       then option
-        when :hash, :model then option[@criteria.slug]
+        when :scalar       then @reference
+        when :hash, :model then @reference[@criteria.slug]
         end
       end
 
-      def infer_name(option)
+      def infer_name
         case @type
-        when :scalar then option
-        when :hash   then option[@name_key]
-        when :model  then option.send(@name_key)
+        when :scalar then @reference
+        when :hash   then @reference[@name_key]
+        when :model  then @reference.send(@name_key)
         end
       end
     end
