@@ -22,7 +22,11 @@ module Livelist
         @model_name        = options[:model_name]
         @type              = options[:type] || initialize_type
         @key_name          = options[:key_name] || default_key_name
-        @criteria          = FilterCriteria.new(:filter => self, :collection => options[:collection], :slug => @key_name)
+        @criteria          = FilterCriteria.new(
+                               :filter => self,
+                               :reference_criteria => options[:reference_criteria],
+                               :slug => @key_name
+                             )
       end
 
       def group_by

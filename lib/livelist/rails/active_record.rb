@@ -8,9 +8,9 @@ module Livelist
       def filter_for(slug, options = {})
         @filters ||= FilterCollection.new
         @filters.create_filter(
-          :model_name => model_name,
-          :slug       => slug,
-          :collection => options[:collection]
+          :reference_criteria => options[:reference_criteria],
+          :model_name         => model_name,
+          :slug               => slug
         )
 
         def filters_as_json(params)
