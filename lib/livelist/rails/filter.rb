@@ -1,5 +1,5 @@
 require 'active_record'
-require 'livelist/rails/filter_option_collection'
+require 'livelist/rails/filter_criteria'
 
 module Livelist
   module Rails
@@ -12,7 +12,7 @@ module Livelist
                     :model_class,
                     :join,
                     :type,
-                    :option_collection
+                    :criteria
 
       # slug should always be a symbol
       def initialize(options = {})
@@ -22,7 +22,7 @@ module Livelist
         @model_name        = options[:model_name]
         @type              = options[:type] || initialize_type
         @key_name          = options[:key_name] || default_key_name
-        @option_collection = FilterOptionCollection.new(:filter => self, :collection => options[:collection], :slug => @key_name)
+        @criteria          = FilterCriteria.new(:filter => self, :collection => options[:collection], :slug => @key_name)
       end
 
       def group_by
@@ -37,7 +37,7 @@ module Livelist
       end
 
       def set_option_counts(query, params)
-        @option_collection.counts = counts(query, params)
+        @criteria.counts = counts(query, params)
       end
 
       def counts_relation(query, filter, params)
@@ -86,7 +86,7 @@ module Livelist
         {
           :filter_slug => @slug,
           :name => @name,
-          :options => @option_collection.as_json(params)
+          :options => @criteria.as_json(params)
         }
       end
 
@@ -101,7 +101,7 @@ module Livelist
       end
 
       def option_slugs
-        @option_collection.slugs
+        @criteria.slugs
       end
     end
 

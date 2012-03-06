@@ -4,7 +4,7 @@ require 'livelist/rails/filter_criterion'
 module Livelist
   module Rails
 
-    class FilterOptionCollection < HashWithIndifferentAccess
+    class FilterCriteria < HashWithIndifferentAccess
       alias :criteria :values
       alias :find_criteria :[]
       attr_reader :slug
@@ -25,7 +25,7 @@ module Livelist
       end
 
       def create_criterion(option)
-        filter_criterion = FilterCriterion.new(:filter => @filter, :option_collection => self, :option => option)
+        filter_criterion = FilterCriterion.new(:filter => @filter, :criteria => self, :option => option)
         self[filter_criterion.slug] = filter_criterion
       end
 

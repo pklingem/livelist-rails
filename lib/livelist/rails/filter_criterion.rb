@@ -12,12 +12,12 @@ module Livelist
                     :name_key
 
       def initialize(options = {})
-        @filter            = options[:filter]
-        @option_collection = options[:option_collection]
-        @type              = infer_type(options[:option])
-        @name_key          = options[:name_key] || infer_name_key(options[:option])
-        @slug              = infer_slug(options[:option])
-        @name              = infer_name(options[:option])
+        @filter   = options[:filter]
+        @criteria = options[:criteria]
+        @type     = infer_type(options[:option])
+        @name_key = options[:name_key] || infer_name_key(options[:option])
+        @slug     = infer_slug(options[:option])
+        @name     = infer_name(options[:option])
       end
 
       def selected?(params)
@@ -54,8 +54,8 @@ module Livelist
         when :model
           if option.respond_to?(:name)
             :name
-          elsif option.respond_to?(@option_collection.slug)
-            @option_collection.slug
+          elsif option.respond_to?(@criteria.slug)
+            @criteria.slug
           end
         end
       end
@@ -63,7 +63,7 @@ module Livelist
       def infer_slug(option)
         case @type
         when :scalar       then option
-        when :hash, :model then option[@option_collection.slug]
+        when :hash, :model then option[@criteria.slug]
         end
       end
 
