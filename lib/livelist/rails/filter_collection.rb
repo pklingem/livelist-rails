@@ -24,7 +24,7 @@ module Livelist
       def as_json(query, params)
         params ||= {}
         filters.map do |filter|
-          filter.set_option_counts(query, params)
+          filter.set_criteria_counts(query, params)
           filter.as_json(params[filter.slug])
         end
       end

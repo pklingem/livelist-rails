@@ -36,7 +36,7 @@ module Livelist
         params.nil? || (self == matching_filter)
       end
 
-      def set_option_counts(query, params)
+      def set_criteria_counts(query, params)
         @criteria.counts = counts(query, params)
       end
 
@@ -55,7 +55,7 @@ module Livelist
 
       def relation(query, params, exclude_params_relation)
         query = query.includes(@slug) if @type == :association
-        query = query.where(where(option_slugs))
+        query = query.where(where(@criteria.slugs))
         query = query.where(where(params)) unless exclude_params_relation
         query
       end
@@ -98,10 +98,6 @@ module Livelist
         else
           nil
         end
-      end
-
-      def option_slugs
-        @criteria.slugs
       end
     end
 
