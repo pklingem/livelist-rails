@@ -9,6 +9,7 @@ module Livelist
         @filters ||= FilterCollection.new
         @filters.create_filter(
           :reference_criteria => options[:reference_criteria],
+          :name               => options[:name],
           :model_name         => model_name,
           :slug               => slug
         )
