@@ -14,12 +14,12 @@ module Livelist
           :slug               => slug
         )
 
-        def filters_as_json(params)
-          @filters.as_json(scoped, params)
+        def filters_as_json(params, options = {})
+          @filters.as_json(scoped, params, options)
         end
 
-        def filter(params)
-          @filters.relation(scoped, params)
+        def filter(params, options = {})
+          @filters.relation(scoped, params, options)
         end
       end
 

@@ -10,18 +10,28 @@ module Livelist
       attr_reader :slug
 
       def initialize(options)
-        @filter             = options[:filter]
-        @reference_criteria = options[:reference_criteria] || default_reference_criteria
-        @reference_criteria = @reference_criteria.call if @reference_criteria.respond_to?(:call)
-        @slug               = options[:slug]
+        @filter = options[:filter]
+        @slug   = options[:slug]
 
-        @reference_criteria.each do |reference|
-          create_criterion(reference)
-        end
+        initialize_criteria(options[:reference_criteria])
+      end
+
+      def initialize_criteria(reference_criteria)
+        reference_criteria ||= default_reference_criteria
+        reference_criteria = reference_criteria.call if reference_criteria.respond_to?(:call)
+        reference_criteria.each { |reference| create_criterion(reference) }
+      end
+
+      def criteria=(reference_criteria)
+        clear
+        reference_criteria.each { |reference| create_criterion(reference) }
       end
 
       def default_reference_criteria
-        @filter.model_class.select("distinct #{@filter.slug}")
+        case @filter.type
+        when :attribute then @filter.model_class.select("distinct #{@filter.slug}")
+        when :association then @filter.slug.to_s.classify.constantize.scoped
+        end
       end
 
       def create_criterion(reference)
