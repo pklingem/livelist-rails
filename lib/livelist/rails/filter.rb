@@ -5,6 +5,10 @@ module Livelist
   module Rails
 
     class Filter
+      DEFAULT_FILTER_OPTIONS = {
+        :reference_criteria => nil
+      }
+
       attr_accessor :slug,
                     :name,
                     :key_name,
@@ -27,6 +31,12 @@ module Livelist
                                :reference_criteria => options[:reference_criteria],
                                :slug => @key_name
                              )
+      end
+
+      def prepare_options(options)
+        options ||= {}
+        options.reverse_merge!(DEFAULT_FILTER_OPTIONS)
+        @criteria.set_criteria(options[:reference_criteria]) if options[:reference_criteria]
       end
 
       def group_by

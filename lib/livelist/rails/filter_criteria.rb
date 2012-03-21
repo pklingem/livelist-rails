@@ -22,7 +22,7 @@ module Livelist
         reference_criteria.each { |reference| create_criterion(reference) }
       end
 
-      def criteria=(reference_criteria)
+      def set_criteria(reference_criteria)
         clear
         reference_criteria.each { |reference| create_criterion(reference) }
       end

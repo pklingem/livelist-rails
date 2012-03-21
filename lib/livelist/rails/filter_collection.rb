@@ -16,7 +16,7 @@ module Livelist
       def relation(query, params, options = {})
         params ||= {}
         filters.each do |filter|
-          filter.criteria.criteria = options[filter.slug][:reference_criteria] if options[filter.slug].try(:[], :reference_criteria)
+          filter.prepare_options(options[filter.slug])
           query = filter.relation(query, params[filter.slug.to_s], params.empty?)
         end
         query
@@ -25,7 +25,7 @@ module Livelist
       def as_json(query, params, options = {})
         params ||= {}
         filters.map do |filter|
-          filter.criteria.criteria = options[filter.slug][:reference_criteria] if options[filter.slug].try(:[], :reference_criteria)
+          filter.prepare_options(options[filter.slug])
           filter.set_criteria_counts(query, params)
           filter.as_json(params[filter.slug])
         end
