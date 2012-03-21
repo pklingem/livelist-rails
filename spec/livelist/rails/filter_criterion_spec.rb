@@ -1,7 +1,7 @@
 require 'spec_helper.rb'
 require File.expand_path('./lib/livelist/rails/filter_criterion.rb')
 
-describe Livelist::Rails::FilterCritereon do
+describe Livelist::Rails::FilterCriterion do
 	subject { FilterCritereon.new }
 
 	context :initialize do
