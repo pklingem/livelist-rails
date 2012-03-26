@@ -5,6 +5,10 @@ module Livelist
   module Rails
     module ActiveRecord
 
+      def filters
+        @filters
+      end
+
       def filter_for(slug, options = {})
         @filters ||= FilterCollection.new
         @filters.create_filter(
