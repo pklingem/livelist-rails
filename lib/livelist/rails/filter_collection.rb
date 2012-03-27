@@ -8,6 +8,10 @@ module Livelist
       alias :filters :values
       alias :find_filter :[]
 
+      def slugs
+        keys.map(&:to_sym)
+      end
+
       def create_filter(options)
         options.merge!(:filter_collection => self)
         self[options[:slug]] = Filter.new(options)

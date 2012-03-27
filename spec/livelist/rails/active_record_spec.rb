@@ -19,29 +19,64 @@ describe Livelist::Rails::ActiveRecord do
 		def select(*args)
 			[]
 		end
+
+    def scoped
+      ActiveRecord::Relation.new(nil, nil)
+    end
   end
 
   class User
     extend ActiveRecord::ClassMethods
     extend Livelist::Rails::ActiveRecord
-
-    filter_for :status
-		filter_for :state
   end
 
-	subject { User.new }
+	subject { User }
 
-	context :filter_for do
-    it 'should set filters instance variable to a filter collection object' do
-      User.filters.should be_kind_of(Livelist::Rails::FilterCollection)
+	context :filters do
+    it 'filters should be a FilterCollection object' do
+      subject.filters.should be_kind_of(Livelist::Rails::FilterCollection)
     end
 	end
 
-	context :filters_as_json do
+  context :filter_for do
+    let(:name) { 'State' }
+    let(:reference_criteria) { ['South Carolina', 'Virginia'] }
+    let(:options) do
+      {
+        :reference_criteria => reference_criteria,
+        :name               => name,
+        :model_name         => 'User',
+        :slug               => :state
+      }
+    end
 
-	end
+    it 'should call create a filter with the proper options' do
+      subject.filters.should_receive(:create_filter).with(options)
+      subject.filter_for(:state, :reference_criteria => reference_criteria, :name => name)
+    end
+  end
 
-	context :filter do
+  context 'Runtime Methods' do
+    let(:options) do
+      {}
+    end
 
-	end
+    let(:params) do
+      {}
+    end
+
+    context :filters_as_json do
+      it do
+        subject.filters.should_receive(:as_json).with(nil, params, options)
+        subject.filters_as_json(params, options)
+      end
+    end
+
+    context :filter do
+      it do
+        subject.filters.should_receive(:filter).with(nil, params, options)
+        subject.filter(params, options)
+      end
+    end
+  end
 end
