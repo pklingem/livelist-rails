@@ -18,7 +18,7 @@ module Livelist
             livelist_filename = 'livelist'
           end
 
-          config.action_view.javascript_expansions[:livelist_dependencies] = %W(mustache underscore.min)
+          config.action_view.javascript_expansions[:livelist_dependencies] = %W(mustache.min underscore-min)
           config.action_view.javascript_expansions[:livelist] = [livelist_filename]
         end
       end

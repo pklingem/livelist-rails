@@ -1,3 +1,3 @@
-//= require mustache
+//= require mustache.min
 //= require underscore-min
 //= require livelist
