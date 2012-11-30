@@ -7,7 +7,7 @@ Gem::Specification.new do |s|
   s.version     = Livelist::Rails::VERSION
   s.authors     = ["Patrick Klingemann"]
   s.email       = ["patrick.klingemann@gmail.com"]
-  s.homepage    = ""
+  s.homepage    = "https://github.com/pklingem/livelist-rails"
   s.summary     = %q{A Rails Engine/Extension Incorporating Livelist.js}
   s.description = %q{livelist-rails is a Rails 3.1 Engine/Extension incorporating the following javascript libraries: Mustache.js, underscore.js, jQuery and livelist.js, and providing ActiveRecord filtering extenstions.}
 
