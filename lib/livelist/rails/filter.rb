@@ -1,31 +1,37 @@
 require 'active_record'
+require 'active_support/inflector'
 require 'livelist/rails/filter_criteria'
 
 module Livelist
   module Rails
 
     class Filter
-      DEFAULT_FILTER_OPTIONS = {
-        :reference_criteria => nil
-      }
+      DEFAULT_FILTER_OPTIONS = { :reference_criteria => nil }
 
       attr_accessor :slug,
                     :name,
                     :key_name,
                     :model_name,
                     :model_class,
+                    :attribute,
                     :join,
                     :type,
+                    :criterion_label,
                     :criteria
 
       # slug should always be a symbol
       def initialize(options = {})
+        raise ArgumentError, 'slug option required' unless options[:slug]
+        raise ArgumentError, 'model_name option required' unless options[:model_name]
+
         @filter_collection = options[:filter_collection]
         @slug              = options[:slug].to_sym
         @name              = options[:name] || @slug.to_s.capitalize
         @model_name        = options[:model_name]
         @type              = options[:type] || initialize_type
         @key_name          = options[:key_name] || default_key_name
+        @attribute         = options[:attribute] || default_key_name
+        @criterion_label   = options[:criterion_label]
         @criteria          = FilterCriteria.new(
                                :filter => self,
                                :reference_criteria => options[:reference_criteria],
@@ -76,7 +82,7 @@ module Livelist
 
       def default_key_name
         case @type
-        when :association then :id
+        when :association then @attribute || :id
         when :attribute   then @slug
         end
       end
@@ -92,8 +98,12 @@ module Livelist
         @model_name.classify.constantize
       end
 
+      def filter_class
+        slug.to_s.classify.constantize
+      end
+
       def where(slug_params)
-        { table_name => { @key_name => slug_params } }
+        { table_name => { @attribute => slug_params } }
       end
 
       def as_json(params)

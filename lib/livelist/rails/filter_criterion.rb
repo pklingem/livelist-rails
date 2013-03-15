@@ -9,14 +9,14 @@ module Livelist
                     :count,
                     :value,
                     :type,
-                    :name_key
+                    :label
 
       def initialize(options = {})
         @filter    = options[:filter]
         @criteria  = options[:criteria]
         @reference = options[:reference]
         @type      = infer_type
-        @name_key  = options[:name_key] || infer_name_key
+        @label     = @filter.criterion_label || infer_label
         @slug      = infer_slug
         @name      = infer_name
       end
@@ -48,7 +48,7 @@ module Livelist
         end
       end
 
-      def infer_name_key
+      def infer_label
         case @type
         when :scalar then nil
         when :hash then :name
@@ -71,8 +71,8 @@ module Livelist
       def infer_name
         case @type
         when :scalar then @reference
-        when :hash   then @reference[@name_key]
-        when :model  then @reference.send(@name_key)
+        when :hash   then @reference[@label]
+        when :model  then @reference.send(@label)
         end
       end
     end

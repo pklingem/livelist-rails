@@ -30,7 +30,7 @@ module Livelist
       def default_reference_criteria
         case @filter.type
         when :attribute then @filter.model_class.select("distinct #{@filter.slug}")
-        when :association then @filter.slug.to_s.classify.constantize.scoped
+        when :association then @filter.filter_class.scoped
         end
       end
 

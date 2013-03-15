@@ -14,6 +14,8 @@ module Livelist
           :reference_criteria => options[:reference_criteria],
           :name               => options[:name],
           :model_name         => model_name,
+          :attribute          => options[:attribute],
+          :key_name           => options[:key_name],
           :slug               => slug
         )
       end
@@ -25,6 +27,7 @@ module Livelist
       def filter(params, options = {})
         filters.relation(scoped, params, options)
       end
+
     end
   end
 end

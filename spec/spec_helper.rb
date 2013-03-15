@@ -4,6 +4,7 @@
 # loaded once.
 
 require 'simplecov'
+
 SimpleCov.start
 
 # See http://rubydoc.info/gems/rspec-core/RSpec/Core/Configuration
