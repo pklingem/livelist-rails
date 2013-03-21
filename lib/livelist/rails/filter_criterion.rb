@@ -26,13 +26,13 @@ module Livelist
       end
 
       def as_json(params)
-        {
+        metadata.merge(
           :slug     => @filter.slug,
           :name     => @name,
           :value    => @slug.to_s,
           :count    => @count,
           :selected => selected?(params)
-        }
+        )
       end
 
     private
@@ -73,6 +73,21 @@ module Livelist
         when :scalar then @reference
         when :hash   then @reference[@label]
         when :model  then @reference.send(@label)
+        end
+      end
+
+      def property_value(property)
+        case @type
+        when :scalar then nil
+        when :hash   then @reference[property]
+        when :model  then @reference.send(property)
+        end
+      end
+
+      def metadata
+        @criteria.metadata_properties.reduce({}) do |result, property|
+          result[property] = property_value(property)
+          result
         end
       end
     end

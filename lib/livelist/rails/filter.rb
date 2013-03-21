@@ -35,6 +35,7 @@ module Livelist
         @criteria          = FilterCriteria.new(
                                :filter => self,
                                :reference_criteria => options[:reference_criteria],
+                               :metadata_properties => options[:option_metadata_properties],
                                :slug => @key_name
                              )
       end

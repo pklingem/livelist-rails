@@ -7,11 +7,12 @@ module Livelist
     class FilterCriteria < HashWithIndifferentAccess
       alias :criteria :values
       alias :find_criteria :[]
-      attr_reader :slug
+      attr_reader :slug, :metadata_properties
 
       def initialize(options)
-        @filter = options[:filter]
-        @slug   = options[:slug]
+        @filter              = options[:filter]
+        @slug                = options[:slug]
+        @metadata_properties = options[:metadata_properties] || {}
 
         initialize_criteria(options[:reference_criteria])
       end
